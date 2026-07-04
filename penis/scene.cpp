@@ -8,6 +8,24 @@
 
 using namespace std;
 
+template <typename T>
+void load_attribute(cgltf_accessor* attribute, int num_comp, vector<T>& dst)
+{
+      int n = 0;
+      dst.resize(num_comp * attribute->count);
+      T* buffer = (T*)attribute->buffer_view->buffer->data +
+                                     attribute->buffer_view->offset/sizeof(T) + attribute->offset/sizeof(T);
+      
+      for (unsigned int k = 0; k < attribute->count; k++) 
+      {
+            for (int l = 0; l < num_comp; l++) 
+            {
+                  dst[num_comp*k + l] = (T)buffer[n + l];
+            }
+            n += (int)(attribute->stride/sizeof(T));
+      }
+}
+
 void Scene::Init()
 {
       diffuse_maps = packed_freelist<DiffuseMap>(512);
@@ -91,7 +109,62 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
       }
 
       //add meshes (and prototypes) to the scene
+
+      for(int i = 0; i < data->nodes_count; i++)
+      {
+            cgltf_node* node = &(data->nodes[i]);
+            cgltf_mesh* mesh = node->mesh;
+            if(!mesh) continue;
+
+            
       
+            for (unsigned int p = 0; p < mesh->primitives_count; p++)
+            {
+                  if(mesh->primitives[p].type != cgltf_primitive_type_triangles) continue;
+
+                  Mesh new_mesh;
+                  for(unsigned int j = 0; j < mesh->primitives[p].attributes_count; j++)
+                  {
+                        if(mesh->primitives[p].attributes[j].type == cgltf_attribute_type_position)
+                        {
+                              cgltf_accessor *attribute = mesh->primitives[p].attributes[j].data;
+                              int vert_count = (int)attribute->count;
+                              new_mesh.vertex_count = vert_count;
+                              vector<float> vert_positions(vert_count * 3);
+                              load_attribute(attribute, 3, vert_positions);
+
+                              GLuint new_position_BO;
+                              glGenBuffers(1, &new_position_BO);
+                              glBindBuffer(GL_ARRAY_BUFFER, new_position_BO);
+                              glBufferData(GL_ARRAY_BUFFER, vert_positions.size() * sizeof(float), vert_positions.data(), GL_STATIC_DRAW);
+
+                              new_mesh.postion_BO = new_position_BO;
+                        }
+                  }
+
+                  //hook up VAO
+                  {
+                        GLuint new_mesh_VAO;
+                        glGenVertexArrays(1, &new_mesh_VAO);
+                        glBindVertexArray(new_mesh_VAO);
+      
+                        if(new_mesh.postion_BO)
+                        {
+                              glBindBuffer(GL_ARRAY_BUFFER, new_mesh.postion_BO);
+                              glVertexAttribPointer(SCENE_POSITION_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
+                              glBindBuffer(GL_ARRAY_BUFFER, 0);
+                              glEnableVertexAttribArray(SCENE_POSITION_ATTRIB_LOCATION);
+                        }
+                  }
+
+                  uint32_t new_mesh_ID = scene.meshes.insert(new_mesh);
+                  if(load_mesh_IDs)
+                  {
+                        load_mesh_IDs->push_back(new_mesh_ID);   
+                  }
+            }
+            
+      }
 }
 
 void AddInstance(Scene &scene, uint32_t mesh_ID, uint32_t *new_instance_ID)
@@ -151,3 +224,4 @@ unsigned int texture_from_file(std::string uri, const std::string &directory, bo
 
       return textureID;
 }
+

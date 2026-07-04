@@ -97,3 +97,5 @@ void AddInstance(Scene& scene,
                  uint32_t* new_instance_ID);
 
 unsigned int texture_from_file(std::string uri, const std::string &directory, bool gamma);
+
+
