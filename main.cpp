@@ -1,5 +1,9 @@
 ﻿#include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#include "penis/scene.hpp"
+#include "penis/game_mode.hpp"
+
 #include <iostream>
 
 bool full_screen = false;
@@ -56,6 +60,14 @@ int main()
       }
 
       glfwSwapInterval(0);
+
+      Scene scene;
+      scene.Init();
+
+      //Gamemode
+      IGameMode* game_mode = NewGameMode();
+      game_mode->Init(&scene);
+            
 
 
       while(!glfwWindowShouldClose(window))

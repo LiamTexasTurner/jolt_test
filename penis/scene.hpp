@@ -19,13 +19,18 @@ struct DiffuseMap
 
 struct Material
 {
-      std::string Name;
+      std::string name;
 
-      float ambient[3];
-      float diffuse[3];
-      float ppecular[3];
-      float shininess;
-      uint32_t diffuseMapID;
+      GLuint albedo;
+      GLuint normal;
+      GLuint ORM;
+      
+      float base_color[4];
+
+      
+      uint32_t diffuse_map_ID;
+      uint32_t normal_map_ID;
+      uint32_t orm_map_ID;
 };
 
 struct Mesh
@@ -90,3 +95,5 @@ void LoadMeshes(Scene& scene,
 void AddInstance(Scene& scene,
                  uint32_t mesh_ID,
                  uint32_t* new_instance_ID);
+
+unsigned int texture_from_file(std::string uri, const std::string &directory, bool gamma);

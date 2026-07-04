@@ -10,6 +10,7 @@ add_executable(SceneRenderer
   include/glad/glad.c
 
   penis/scene.cpp
+  penis/game_mode.cpp
   
 
 )
