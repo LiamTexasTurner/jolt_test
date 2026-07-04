@@ -6,5 +6,5 @@ set "name=SceneRenderer"
 cmake --build "%CD%\cmake-build-debug" --target %name% -j 22
 if errorlevel 1 exit /b
 
-cd /d "%CD%\cmake-build-debug"
-%name%.exe
+rem cd /d "%CD%\cmake-build-debug"
+rem %name%.exe

@@ -6,7 +6,12 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(SceneRenderer
   main.cpp
   include/stb_image.cpp
+  include/cgltf.cpp
   include/glad/glad.c
+
+  penis/scene.cpp
+  
+
 )
 
 target_include_directories(SceneRenderer PRIVATE
