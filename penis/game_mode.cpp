@@ -29,6 +29,8 @@ public:
             {
                   uint32_t new_instance_ID;
                   AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
+                  uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
+
             }
       }
 };

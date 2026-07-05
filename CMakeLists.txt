@@ -29,3 +29,8 @@ target_link_libraries(SceneRenderer PRIVATE
   opengl32
   gdi32
 )
+
+target_compile_definitions(SceneRenderer PRIVATE
+  GLM_FORCE_CTOR_INIT
+  )
+  

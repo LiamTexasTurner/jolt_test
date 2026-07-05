@@ -51,10 +51,10 @@ struct Mesh
 
 struct Transform
 {
-      glm::vec3 scale = glm::vec3(1.0f);
-      glm::vec3 rotation_origin = glm::vec3(0.0f);
-      glm::quat rotation = glm::identity<glm::quat>();
-      glm::vec3 translation = glm::vec3(0.0f);
+      glm::vec3 scale;
+      glm::vec3 rotation_origin;
+      glm::quat rotation;
+      glm::vec3 translation;
 };
 
 struct Instance
