@@ -121,8 +121,8 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
             for (unsigned int p = 0; p < mesh->primitives_count; p++)
             {
                   if(mesh->primitives[p].type != cgltf_primitive_type_triangles) continue;
-
                   Mesh new_mesh;
+                  
                   for(unsigned int j = 0; j < mesh->primitives[p].attributes_count; j++)
                   {
                         if(mesh->primitives[p].attributes[j].type == cgltf_attribute_type_position)
@@ -141,6 +141,28 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                               new_mesh.postion_BO = new_position_BO;
                         }
                   }
+                  
+                  if(mesh->primitives[p].indices != nullptr)
+                  {
+                        cgltf_accessor *attribute = mesh->primitives[p].indices;
+                        new_mesh.index_count = (int)attribute->count;
+                        vector<unsigned short> indices(new_mesh.index_count);                        
+                        if(attribute->component_type == cgltf_component_type_r_16u)
+                        {
+                              load_attribute(attribute, 1, indices);
+                        }
+                        else if(attribute->component_type == cgltf_component_type_r_32u)
+                        {
+                              load_attribute(attribute, 1, indices);
+                        }
+
+                        GLuint new_index_BO;
+                        glGenBuffers(1, &new_index_BO);
+                        glBindBuffer(GL_ARRAY_BUFFER, new_index_BO);
+                        glBufferData(GL_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
+                        glBindBuffer(GL_ARRAY_BUFFER, 0);
+                        new_mesh.index_BO = new_index_BO;
+                  }
 
                   //hook up VAO
                   {
@@ -155,6 +177,11 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                               glBindBuffer(GL_ARRAY_BUFFER, 0);
                               glEnableVertexAttribArray(SCENE_POSITION_ATTRIB_LOCATION);
                         }
+
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, new_mesh.index_BO);
+                        glBindVertexArray(0);
+
+                        new_mesh.mesh_VAO = new_mesh_VAO;
                   }
 
                   uint32_t new_mesh_ID = scene.meshes.insert(new_mesh);
@@ -162,8 +189,7 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                   {
                         load_mesh_IDs->push_back(new_mesh_ID);   
                   }
-            }
-            
+            }            
       }
 }
 

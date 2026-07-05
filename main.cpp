@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include "penis/scene.hpp"
+#include "penis/renderer.hpp"
 #include "penis/game_mode.hpp"
 
 #include <iostream>
@@ -64,9 +65,12 @@ int main()
       Scene scene;
       scene.Init();
 
+      IRenderer* renderer = NewRenderer();
+      renderer->Init(&scene);
+
       //Gamemode
       IGameMode* game_mode = NewGameMode();
-      game_mode->Init(&scene);
+      game_mode->Init(&scene, renderer);
             
 
 
@@ -77,6 +81,8 @@ int main()
 
             glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
+
+            renderer->Paint();
 
             
             glfwSwapBuffers(window);

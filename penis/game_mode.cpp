@@ -1,5 +1,6 @@
 #include "game_mode.hpp"
 #include "scene.hpp"
+#include "renderer.hpp"
 
 #include <vector>
 
@@ -14,7 +15,7 @@ public:
 
       unsigned int m_last_update_tick;
 
-      void Init(Scene* scene) override
+      void Init(Scene* scene, IRenderer* renderer) override
       {
             m_scene = scene;
 
@@ -24,7 +25,11 @@ public:
 
             loaded_mesh_IDs.clear();
             LoadMeshes(*m_scene, "../resources/chips_2/chips_2.gltf", &loaded_mesh_IDs);
-            
+            for(uint32_t loaded_mesh_ID : loaded_mesh_IDs)
+            {
+                  uint32_t new_instance_ID;
+                  AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
+            }
       }
 };
 
