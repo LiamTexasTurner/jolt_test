@@ -210,9 +210,21 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                         glBindVertexArray(0);
 
                         new_mesh.mesh_VAO = new_mesh_VAO;
-                  }
+                        new_mesh.material_IDs.push_back(new_material_IDs[p]);
 
-                  new_mesh.material_IDs.push_back(new_material_IDs.back());
+                        
+                  }
+                  //split mesh into draw calls
+                  int num_faces = (int)new_mesh.index_count / 3;
+                  int curr_material_first_face_index = 0;
+                  for(int face_index = 0; face_index < num_faces; face_index++)
+                  {
+                        bool is_last_face = face_index + 1 == num_faces;
+                        bool is_next_face_index_different = is_last_face;
+                  }
+                        
+
+                  
 
                   uint32_t new_mesh_ID = scene.meshes.insert(new_mesh);
                   if(load_mesh_IDs)
