@@ -97,10 +97,13 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                               
                               DiffuseMap new_diffuse_map;
                               new_diffuse_map.DiffuseMapTO = new_diffuse_map_TO;
+                              
 
                               uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(new_diffuse_map);
 
                               diffuse_map_cache.emplace(mat->name, new_diffuse_map_ID);
+
+                              new_material.diffuse_map_ID = new_diffuse_map_ID;
                         }
                   }
             }
@@ -137,8 +140,26 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                               glGenBuffers(1, &new_position_BO);
                               glBindBuffer(GL_ARRAY_BUFFER, new_position_BO);
                               glBufferData(GL_ARRAY_BUFFER, vert_positions.size() * sizeof(float), vert_positions.data(), GL_STATIC_DRAW);
+                              glBindBuffer(GL_ARRAY_BUFFER, 0);
 
                               new_mesh.postion_BO = new_position_BO;
+                        }
+                        if(mesh->primitives[p].attributes[j].type == cgltf_attribute_type_texcoord)
+                        {
+                              cgltf_accessor* attribute = mesh->primitives[p].attributes[j].data;
+                              if(attribute->component_type == cgltf_component_type_r_32f)
+                              {
+                                    vector<float> tex_coords(attribute->count * 2);
+                                    load_attribute(attribute, 2, tex_coords);
+                                    
+                                    GLuint new_tex_coords_BO;
+                                    glGenBuffers(1, &new_tex_coords_BO);
+                                    glBindBuffer(GL_ARRAY_BUFFER, new_tex_coords_BO);
+                                    glBufferData(GL_ARRAY_BUFFER, tex_coords.size() * sizeof(float), tex_coords.data(), GL_STATIC_DRAW);
+                                    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+                                    new_mesh.tex_coord_BO = new_tex_coords_BO;
+                              }
                         }
                   }
                   
@@ -177,12 +198,21 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                               glBindBuffer(GL_ARRAY_BUFFER, 0);
                               glEnableVertexAttribArray(SCENE_POSITION_ATTRIB_LOCATION);
                         }
+                        if(new_mesh.tex_coord_BO)
+                        {
+                              glBindBuffer(GL_ARRAY_BUFFER, new_mesh.tex_coord_BO);
+                              glVertexAttribPointer(SCENE_TEXCOORD_ATTRIB_LOCATION, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
+                              glBindBuffer(GL_ARRAY_BUFFER, 0);
+                              glEnableVertexAttribArray(SCENE_TEXCOORD_ATTRIB_LOCATION);
+                        }
 
                         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, new_mesh.index_BO);
                         glBindVertexArray(0);
 
                         new_mesh.mesh_VAO = new_mesh_VAO;
                   }
+
+                  new_mesh.material_IDs.push_back(new_material_IDs.back());
 
                   uint32_t new_mesh_ID = scene.meshes.insert(new_mesh);
                   if(load_mesh_IDs)

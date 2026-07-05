@@ -57,15 +57,15 @@ public:
 
             glEnable(GL_DEPTH_TEST);
             glDepthFunc(GL_GREATER);
-            glEnable(GL_FRAMEBUFFER_SRGB);
-            
+            // glEnable(GL_FRAMEBUFFER_SRGB);
+                  
             for(uint32_t instance_ID : m_scene->instances)
             {
                   const Instance* instance = &m_scene->instances[instance_ID];
                   const Mesh* mesh = &m_scene->meshes[instance->mesh_ID];
                   Transform* transform = &m_scene->transforms[instance->transform_ID];
                   transform->scale = glm::vec3(1.0f);
-
+      
                   glm::mat4 MW = glm::mat4(1.0f);
                   MW = translate(-transform->rotation_origin) * MW;
                   MW = mat4_cast(transform->rotation) * MW;
@@ -74,27 +74,45 @@ public:
                   MW = translate(transform->translation) * MW;
 
                   glm::mat4 MVP = VP * MW;
-
+      
                   glm::mat3 N_MW = glm::mat4(1.0f);
                   N_MW = mat3_cast(transform->rotation) * N_MW;
                   N_MW = glm::mat3(scale(1.0f / transform->scale)) * N_MW;
-
+      
                   glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
                   glUniformMatrix4fv(SCENE_N_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(N_MW));
                   glUniformMatrix4fv(SCENE_MVP_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MVP));
 
+                  glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
+                  
+                  const Material* material = &m_scene->materials[mesh->material_IDs.back()];
+
+                  glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
+                  if(material->diffuse_map_ID == -1)
+                  {
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                        glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 0);
+                  }
+                  else
+                  {
+                        const DiffuseMap* diffuse_map = &m_scene->diffuse_maps[material->diffuse_map_ID];
+                        glBindTexture(GL_TEXTURE_2D, diffuse_map->DiffuseMapTO);
+                        glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 1);
+                  }
+                  
+      
                   glBindVertexArray(mesh->mesh_VAO);
                   glDrawElements(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_SHORT, 0);
-
+      
                   glBindVertexArray(0);
             }
-
-            glDisable(GL_FRAMEBUFFER_SRGB);
+      
+            // glDisable(GL_FRAMEBUFFER_SRGB);
             glDepthFunc(GL_LESS);
             glDisable(GL_DEPTH_TEST);
       }
 };
-
+      
 IRenderer* NewRenderer()
 {
       return new Renderer();

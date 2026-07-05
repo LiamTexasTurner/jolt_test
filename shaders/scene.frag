@@ -55,5 +55,5 @@ void main()
 
     vec3 radiance = ambient + diffuse + specular;
 
-    FragColor = vec4(radiance, 1);
+    FragColor = vec4(diffuseMap, 1);
 }
