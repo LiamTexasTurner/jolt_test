@@ -44,19 +44,15 @@ public:
             
             m_shaders.UpdatePrograms();
 
-            
 
-            glm::vec3 eye = glm::vec3(sinf(glfwGetTime()) * 2.0f,2, -10);
-            glm::vec3 up = glm::vec3(0,1,0);
-            
+
             glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 300.0f);
-            glm::mat4 view = glm::lookAt(eye, eye + glm::vec3(0,0,1), up);
-
-            glm::mat4 VP = projection * view;
-
+            Camera* cam = &m_scene->cameras[m_scene->main_camera_ID];
+            glm::mat4 VP = projection * cam->GetViewMatrix();
+            
             glUseProgram(*m_scene_SP);
 
-            glUniform3fv(SCENE_CAMERAPOS_UNIFORM_LOCATION, 1, glm::value_ptr(eye));
+            glUniform3fv(SCENE_CAMERAPOS_UNIFORM_LOCATION, 1, glm::value_ptr(cam->translation));
 
             glEnable(GL_DEPTH_TEST);
             for(uint32_t instance_ID : m_scene->instances)

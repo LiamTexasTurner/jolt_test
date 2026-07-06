@@ -7,6 +7,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include "packed_freelist.h"
+#include "camera.hpp"
 
 #include <vector>
 #include <string>
@@ -63,16 +64,6 @@ struct Instance
       uint32_t transform_ID;
 };
 
-struct Camera
-{
-      glm::vec3 eye;
-      glm::vec3 target;
-      glm::vec3 up;
-
-      float fov_y;
-      float aspect;
-      float near_z;
-};
 class Scene
 {
 public:
