@@ -4,6 +4,8 @@
 #include "shaderset.h"
 #include "shader.h"
 
+#include "GLFW/glfw3.h"
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -38,16 +40,17 @@ public:
       {
 
             glClearColor(100.0f / 255.0f, 149.0f / 255.0f, 237.0f / 255.0f, 1.0f);
-            glClearDepth(0.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             
             m_shaders.UpdatePrograms();
 
-            glm::vec3 eye = glm::vec3(0,2,-4);
+            
+
+            glm::vec3 eye = glm::vec3(sinf(glfwGetTime()) * 2.0f,2, -10);
             glm::vec3 up = glm::vec3(0,1,0);
             
             glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 300.0f);
-            glm::mat4 view = glm::lookAt(eye, glm::vec3(0,0,1), up);
+            glm::mat4 view = glm::lookAt(eye, eye + glm::vec3(0,0,1), up);
 
             glm::mat4 VP = projection * view;
 
@@ -56,9 +59,6 @@ public:
             glUniform3fv(SCENE_CAMERAPOS_UNIFORM_LOCATION, 1, glm::value_ptr(eye));
 
             glEnable(GL_DEPTH_TEST);
-            glDepthFunc(GL_GREATER);
-            // glEnable(GL_FRAMEBUFFER_SRGB);
-                  
             for(uint32_t instance_ID : m_scene->instances)
             {
                   const Instance* instance = &m_scene->instances[instance_ID];
@@ -117,7 +117,7 @@ public:
                   
                   glBindVertexArray(0);
             }
-            glDepthFunc(GL_LESS);
+            // glDepthFunc(GL_LESS);
             glDisable(GL_DEPTH_TEST);
       }
 };
