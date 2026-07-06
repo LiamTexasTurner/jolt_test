@@ -38,6 +38,8 @@ void Scene::Init()
 
 void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mesh_IDs)
 {
+      Mesh mesh_result{};
+      
       cgltf_options options{};
       cgltf_data* data = nullptr;
       string directory = filename.substr(0, filename.find_last_of('/'));
@@ -50,25 +52,6 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
       {
             cout << "failed to load mesh buffers" << endl;
       }
-
-      int prim_count = 0;
-
-      for(int i = 0; i < data->nodes_count; i++)
-      {
-            cgltf_node* node = &(data->nodes[i]);
-            cgltf_mesh* mesh = node->mesh;
-            if(!mesh) continue;
-
-            for(int p = 0; p < mesh->primitives_count; p++)
-            {
-                  if(mesh->primitives[p].type == cgltf_primitive_type_triangles)
-                  {
-                        prim_count++;
-                  }
-            }
-      }
-
-      
 
       //add materials to the scene
       map<string, uint32_t> diffuse_map_cache;
@@ -92,7 +75,7 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                         {
                               cgltf_image* image = tex->image;
                               const char* uri = image->uri;
-
+      
                               GLuint new_diffuse_map_TO = texture_from_file(uri, directory, false);
                               
                               DiffuseMap new_diffuse_map;
@@ -111,128 +94,131 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
             new_material_IDs.push_back(new_material_id);
       }
 
-      //add meshes (and prototypes) to the scene
+      vector<float> positions;
+      vector<float> tex_coords;
+      vector<uint32_t> indices;
 
       for(int i = 0; i < data->nodes_count; i++)
       {
-            cgltf_node* node = &(data->nodes[i]);
-            cgltf_mesh* mesh = node->mesh;
+            cgltf_node *node = &(data->nodes[i]);
+            cgltf_mesh *mesh = node->mesh;
             if(!mesh) continue;
 
-            
-      
-            for (unsigned int p = 0; p < mesh->primitives_count; p++)
+            for(int prim_index = 0; prim_index < mesh->primitives_count; prim_index++)
             {
-                  if(mesh->primitives[p].type != cgltf_primitive_type_triangles) continue;
-                  Mesh new_mesh;
-                  
-                  for(unsigned int j = 0; j < mesh->primitives[p].attributes_count; j++)
+                  cgltf_primitive* primitive = &mesh->primitives[prim_index];
+
+                  if(primitive->type != cgltf_primitive_type_triangles)
                   {
-                        if(mesh->primitives[p].attributes[j].type == cgltf_attribute_type_position)
-                        {
-                              cgltf_accessor *attribute = mesh->primitives[p].attributes[j].data;
-                              int vert_count = (int)attribute->count;
-                              new_mesh.vertex_count = vert_count;
-                              vector<float> vert_positions(vert_count * 3);
-                              load_attribute(attribute, 3, vert_positions);
-
-                              GLuint new_position_BO;
-                              glGenBuffers(1, &new_position_BO);
-                              glBindBuffer(GL_ARRAY_BUFFER, new_position_BO);
-                              glBufferData(GL_ARRAY_BUFFER, vert_positions.size() * sizeof(float), vert_positions.data(), GL_STATIC_DRAW);
-                              glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-                              new_mesh.postion_BO = new_position_BO;
-                        }
-                        if(mesh->primitives[p].attributes[j].type == cgltf_attribute_type_texcoord)
-                        {
-                              cgltf_accessor* attribute = mesh->primitives[p].attributes[j].data;
-                              if(attribute->component_type == cgltf_component_type_r_32f)
-                              {
-                                    vector<float> tex_coords(attribute->count * 2);
-                                    load_attribute(attribute, 2, tex_coords);
-                                    
-                                    GLuint new_tex_coords_BO;
-                                    glGenBuffers(1, &new_tex_coords_BO);
-                                    glBindBuffer(GL_ARRAY_BUFFER, new_tex_coords_BO);
-                                    glBufferData(GL_ARRAY_BUFFER, tex_coords.size() * sizeof(float), tex_coords.data(), GL_STATIC_DRAW);
-                                    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-                                    new_mesh.tex_coord_BO = new_tex_coords_BO;
-                              }
-                        }
-                  }
-                  
-                  if(mesh->primitives[p].indices != nullptr)
-                  {
-                        cgltf_accessor *attribute = mesh->primitives[p].indices;
-                        new_mesh.index_count = (int)attribute->count;
-                        vector<unsigned short> indices(new_mesh.index_count);                        
-                        if(attribute->component_type == cgltf_component_type_r_16u)
-                        {
-                              load_attribute(attribute, 1, indices);
-                        }
-                        else if(attribute->component_type == cgltf_component_type_r_32u)
-                        {
-                              load_attribute(attribute, 1, indices);
-                        }
-
-                        GLuint new_index_BO;
-                        glGenBuffers(1, &new_index_BO);
-                        glBindBuffer(GL_ARRAY_BUFFER, new_index_BO);
-                        glBufferData(GL_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
-                        glBindBuffer(GL_ARRAY_BUFFER, 0);
-                        new_mesh.index_BO = new_index_BO;
+                        continue;
                   }
 
-                  //hook up VAO
+                  uint32_t base_vertex = 0;
+                  uint32_t vertex_count = 0;
+                  for(int attrib_index = 0; attrib_index < primitive->attributes_count; attrib_index++)
                   {
-                        GLuint new_mesh_VAO;
-                        glGenVertexArrays(1, &new_mesh_VAO);
-                        glBindVertexArray(new_mesh_VAO);
+                        if(primitive->attributes[attrib_index].type == cgltf_attribute_type_position)
+                        {
+                              cgltf_accessor* attribute = primitive->attributes[attrib_index].data;
+                              base_vertex = static_cast<uint32_t>(positions.size() / 3);
+                              vertex_count = static_cast<uint32_t>(attribute->count);
       
-                        if(new_mesh.postion_BO)
-                        {
-                              glBindBuffer(GL_ARRAY_BUFFER, new_mesh.postion_BO);
-                              glVertexAttribPointer(SCENE_POSITION_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
-                              glBindBuffer(GL_ARRAY_BUFFER, 0);
-                              glEnableVertexAttribArray(SCENE_POSITION_ATTRIB_LOCATION);
+                              vector<float> primitive_positions(vertex_count * 3);
+
+                              load_attribute(attribute, 3, primitive_positions);
+
+                              positions.insert(positions.end(), primitive_positions.begin(), primitive_positions.end());
                         }
-                        if(new_mesh.tex_coord_BO)
+                        if(primitive->attributes[attrib_index].type == cgltf_attribute_type_texcoord)
                         {
-                              glBindBuffer(GL_ARRAY_BUFFER, new_mesh.tex_coord_BO);
-                              glVertexAttribPointer(SCENE_TEXCOORD_ATTRIB_LOCATION, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
-                              glBindBuffer(GL_ARRAY_BUFFER, 0);
-                              glEnableVertexAttribArray(SCENE_TEXCOORD_ATTRIB_LOCATION);
+                              cgltf_accessor* attribute = primitive->attributes[attrib_index].data;
+                              vector<float> prim_tex_coords(attribute->count * 2);
+                              load_attribute(attribute, 2, prim_tex_coords);
+
+                              tex_coords.insert(tex_coords.end(), prim_tex_coords.begin(), prim_tex_coords.end());     
                         }
 
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, new_mesh.index_BO);
-                        glBindVertexArray(0);
-
-                        new_mesh.mesh_VAO = new_mesh_VAO;
-                        new_mesh.material_IDs.push_back(new_material_IDs[p]);
-
-                        
                   }
-                  //split mesh into draw calls
-                  int num_faces = (int)new_mesh.index_count / 3;
-                  int curr_material_first_face_index = 0;
-                  for(int face_index = 0; face_index < num_faces; face_index++)
+
+                  uint32_t first_index = static_cast<uint32_t>(indices.size());
+
+                  if(primitive->indices)
                   {
-                        bool is_last_face = face_index + 1 == num_faces;
-                        bool is_next_face_index_different = is_last_face;
+                        cgltf_accessor* index_accessor = primitive->indices;
+
+                        for(int index = 0; index < index_accessor->count; index++)
+                        {
+                              uint32_t local_index = static_cast<uint32_t>(cgltf_accessor_read_index(index_accessor, index));
+
+                              indices.push_back(base_vertex + local_index);
+                        }
+
+                        GLDrawElementsIndirectCommand curr_draw_cmd{};
+
+                        curr_draw_cmd.count = static_cast<GLuint>(index_accessor->count);
+                        curr_draw_cmd.primCount = 1;
+                        curr_draw_cmd.firstIndex = first_index;
+                        curr_draw_cmd.baseVertex = 0;
+                        curr_draw_cmd.baseInstance = 0;
+
+                        mesh_result.draw_commands.push_back(curr_draw_cmd);
                   }
-                        
 
-                  
-
-                  uint32_t new_mesh_ID = scene.meshes.insert(new_mesh);
-                  if(load_mesh_IDs)
+                  auto it = diffuse_map_cache.find(primitive->material->name);
+                  if(it != diffuse_map_cache.end())
                   {
-                        load_mesh_IDs->push_back(new_mesh_ID);   
+                        mesh_result.material_IDs.push_back(it->second);
                   }
             }            
+            break;
       }
+      if(positions.empty() || indices.empty())
+      {
+            cout << "glTF contains no triangle geometry" << endl;
+            cgltf_free(data);
+            return;
+      }
+
+      mesh_result.vertex_count = static_cast<GLuint>(positions.size() / 3);
+      mesh_result.index_count = static_cast<GLuint>(indices.size());
+
+      glGenVertexArrays(1, &mesh_result.mesh_VAO);
+      glGenBuffers(1, &mesh_result.postion_BO);
+      glGenBuffers(1, &mesh_result.tex_coord_BO);
+      glGenBuffers(1, &mesh_result.index_BO);
+
+      glBindVertexArray(mesh_result.mesh_VAO);
+
+      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.postion_BO);
+      glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), positions.data(), GL_STATIC_DRAW);
+      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
+      glEnableVertexAttribArray(0);
+
+      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.tex_coord_BO);
+      glBufferData(GL_ARRAY_BUFFER, tex_coords.size() * sizeof(tex_coords[0]), tex_coords.data(), GL_STATIC_DRAW);
+      glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
+      glEnableVertexAttribArray(1);
+     
+
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_result.index_BO);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
+
+      glBindVertexArray(0);
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+      if(data->meshes_count > 1)
+      {
+            cout << "!SKIPPED MESH! multiple meshes at: " << filename << endl;
+      }
+
+      cgltf_free(data);
+      uint32_t new_mesh_ID = scene.meshes.insert(mesh_result);
+      if(load_mesh_IDs)
+      {
+            load_mesh_IDs->push_back(new_mesh_ID);
+      }
+      
+      
 }
 
 void AddInstance(Scene &scene, uint32_t mesh_ID, uint32_t *new_instance_ID)

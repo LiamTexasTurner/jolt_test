@@ -84,30 +84,39 @@ public:
                   glUniformMatrix4fv(SCENE_MVP_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MVP));
 
                   glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
-                  
-                  const Material* material = &m_scene->materials[mesh->material_IDs.back()];
 
-                  glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
-                  if(material->diffuse_map_ID == -1)
+                  glBindVertexArray(mesh->mesh_VAO);
+                  for(size_t mesh_draw_index = 0; mesh_draw_index < mesh->draw_commands.size(); mesh_draw_index++)
                   {
-                        glBindTexture(GL_TEXTURE_2D, 0);
-                        glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 0);
-                  }
-                  else
-                  {
-                        const DiffuseMap* diffuse_map = &m_scene->diffuse_maps[material->diffuse_map_ID];
-                        glBindTexture(GL_TEXTURE_2D, diffuse_map->DiffuseMapTO);
-                        glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 1);
+                        const GLDrawElementsIndirectCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index];
+                        const Material* material = &m_scene->materials[mesh->material_IDs[mesh_draw_index]];
+
+                        glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
+                        if(material->diffuse_map_ID == -1)
+                        {
+                              glBindTexture(GL_TEXTURE_2D, 0);
+                              glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 0);
+                        }
+                        else
+                        {
+                              const DiffuseMap* diffuse_map = &m_scene->diffuse_maps[material->diffuse_map_ID];
+                              glBindTexture(GL_TEXTURE_2D, diffuse_map->DiffuseMapTO);
+                              glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 1);
+                        }
+
+                        glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES,
+                                                                      draw_cmd->count,
+                                                                      GL_UNSIGNED_INT,
+                                                                      (GLvoid*)(sizeof(uint32_t) * draw_cmd->firstIndex),
+                                                                      draw_cmd->primCount,
+                                                                      draw_cmd->baseVertex,
+                                                                      draw_cmd->baseInstance);
+                                                                       
+                  
                   }
                   
-      
-                  glBindVertexArray(mesh->mesh_VAO);
-                  glDrawElements(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_SHORT, 0);
-      
                   glBindVertexArray(0);
             }
-      
-            // glDisable(GL_FRAMEBUFFER_SRGB);
             glDepthFunc(GL_LESS);
             glDisable(GL_DEPTH_TEST);
       }
