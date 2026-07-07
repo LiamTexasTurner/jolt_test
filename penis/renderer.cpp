@@ -25,6 +25,7 @@ public:
       GLuint* m_scene_SP;
       GLuint* m_shadow_map_SP;
       GLuint* m_debug_depth_map_SP;
+      GLuint* m_blit_texture_SP;
       GLuint* m_blit_test_SP;
 
       GLuint back_buffer_FBO;
@@ -50,6 +51,7 @@ public:
             m_scene_SP = m_shaders.AddProgramFromExts({"../shaders/scene.vert", "../shaders/scene.frag"});
             m_shadow_map_SP = m_shaders.AddProgramFromExts({"../shaders/shadow_mapping_depth.frag", "../shaders/shadow_mapping_depth.frag"});
             m_debug_depth_map_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/debug_depth_map.frag"});
+            m_blit_texture_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_texture.frag"});
             m_blit_test_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_test.frag"});
 
 
@@ -211,12 +213,18 @@ public:
 
 
             //render debug depth map
-            glUseProgram(*m_debug_depth_map_SP);
+            // glUseProgram(*m_debug_depth_map_SP);
+            // glBindVertexArray(m_null_vao);
+            // glActiveTexture(GL_TEXTURE0 + DEBUG_DEPTH_MAP_TEXURE_BINDING);
+            // glBindTexture(GL_TEXTURE_2D, shadow_map_T);
+            // glUniform1f(DEBUG_DEPTH_MAP_NEAR_PLANE, near_plane);
+            // glUniform1f(DEBUG_DEPTH_MAP_FAR_PLANE, far_plane);
+            // glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            glUseProgram(*m_blit_texture_SP);
             glBindVertexArray(m_null_vao);
-            glActiveTexture(GL_TEXTURE0 + DEBUG_DEPTH_MAP_TEXURE_BINDING);
+            glActiveTexture(GL_TEXTURE0 + BLIT_TEXTURE_TEXURE_BINDING);
             glBindTexture(GL_TEXTURE_2D, shadow_map_T);
-            glUniform1f(DEBUG_DEPTH_MAP_NEAR_PLANE, near_plane);
-            glUniform1f(DEBUG_DEPTH_MAP_FAR_PLANE, far_plane);
             glDrawArrays(GL_TRIANGLES, 0, 3);
             
 
