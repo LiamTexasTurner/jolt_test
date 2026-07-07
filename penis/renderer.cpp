@@ -37,6 +37,7 @@ public:
       GLuint shadow_map_FBO;
       GLuint shadow_map_T;
       const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+      bool render_shadow_map = false;
 
       GLuint m_null_vao;
       
@@ -84,15 +85,15 @@ public:
       void Paint() override
       {
 
-            // glClearColor(100.0f / 255.0f, 149.0f / 255.0f, 237.0f / 255.0f, 1.0f);
-            // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClearColor(100.0f / 255.0f, 149.0f / 255.0f, 237.0f / 255.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             
             m_shaders.UpdatePrograms();
 
 
 
             glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 300.0f);
-            
+
             Camera* cam = &m_scene->cameras[m_scene->main_camera_ID];
 
             glm::mat4 VP = projection * cam->GetViewMatrix();
@@ -212,29 +213,19 @@ public:
             glDisable(GL_DEPTH_TEST);
 
 
-            //render debug depth map
-            glViewport(0,0,SCR_WIDTH, SCR_HEIGHT);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glUseProgram(*m_debug_depth_map_SP);
-            glBindVertexArray(m_null_vao);
-            glActiveTexture(GL_TEXTURE0 + DEBUG_DEPTH_MAP_TEXURE_BINDING);
-            glBindTexture(GL_TEXTURE_2D, shadow_map_T);
-            glUniform1f(DEBUG_DEPTH_MAP_NEAR_PLANE, near_plane);
-            glUniform1f(DEBUG_DEPTH_MAP_FAR_PLANE, far_plane);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-
-            // glViewport(0,0, SCR_WIDTH, SCR_HEIGHT);
-            // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            // glUseProgram(*m_blit_texture_SP);
-            // glBindVertexArray(m_null_vao);
-            // glActiveTexture(GL_TEXTURE0 + BLIT_TEXTURE_TEXURE_BINDING);
-            // glBindTexture(GL_TEXTURE_2D, shadow_map_T);
-            // glDrawArrays(GL_TRIANGLES, 0, 3);
+            if(render_shadow_map)
+            {
+                  glViewport(0,0,SCR_WIDTH, SCR_HEIGHT);
+                  glUseProgram(*m_debug_depth_map_SP);
+                  glBindVertexArray(m_null_vao);
+                  glActiveTexture(GL_TEXTURE0 + DEBUG_DEPTH_MAP_TEXURE_BINDING);
+                  glBindTexture(GL_TEXTURE_2D, shadow_map_T);
+                  glUniform1f(DEBUG_DEPTH_MAP_NEAR_PLANE, near_plane);
+                  glUniform1f(DEBUG_DEPTH_MAP_FAR_PLANE, far_plane);
+                  glDrawArrays(GL_TRIANGLES, 0, 3);
+            }
+                  
             
-
-
-            
-
       }
 };
       
