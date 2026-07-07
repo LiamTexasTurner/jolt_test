@@ -87,6 +87,8 @@ void AddInstance(Scene& scene,
                  uint32_t mesh_ID,
                  uint32_t* new_instance_ID);
 
+void RemoveInstance(Scene& scene, uint32_t instance_ID);
+
 unsigned int texture_from_file(std::string uri, const std::string &directory, bool gamma);
 
 

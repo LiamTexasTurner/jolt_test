@@ -23,6 +23,14 @@ public:
 
       ShaderSet m_shaders;
       GLuint* m_scene_SP;
+
+      GLuint back_buffer_FBO;
+      GLuint back_buffer_CT;
+      GLuint back_buffer_DT;
+
+      GLuint shadow_map_FBO;
+      GLuint shadow_map_T;
+      
       
       void Init(Scene* scene) override
       {
@@ -31,9 +39,7 @@ public:
 
             m_shaders.SetVersion("440");
             m_shaders.SetPreambleFile("../penis/preamble.glsl");
-            m_scene_SP = m_shaders.AddProgramFromExts({"../shaders/scene.vert", "../shaders/scene.frag"});
-
-            
+            m_scene_SP = m_shaders.AddProgramFromExts({"../shaders/scene.vert", "../shaders/scene.frag"});            
       }
 
       void Paint() override

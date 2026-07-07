@@ -239,6 +239,15 @@ void AddInstance(Scene &scene, uint32_t mesh_ID, uint32_t *new_instance_ID)
       }
 };
 
+void RemoveInstance(Scene& scene, uint32_t instance_ID)
+{
+      assert(scene.instances.contains(instance_ID) && " tried to remove instance that doestn exist");
+      
+      uint32_t transform_ID = scene.instances[instance_ID].transform_ID;
+      scene.transforms.erase(transform_ID);
+      scene.instances.erase(instance_ID);
+};
+
 unsigned int texture_from_file(std::string uri, const std::string &directory, bool gamma)
 {
       std::string filename = std::string(uri);

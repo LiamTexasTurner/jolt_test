@@ -16,6 +16,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void process_input(GLFWwindow *window);
 
+bool first_key_press = false;
+
 int main()
 {
 
@@ -61,7 +63,7 @@ int main()
       }
 
       glfwSwapInterval(0);
-
+      
       Scene scene;
       scene.Init();
 
@@ -79,8 +81,13 @@ int main()
             glfwPollEvents();
             process_input(window);
 
-            renderer->Paint();
+            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !first_key_press)
+            {
+                  game_mode->HandleEvent();
+                  first_key_press = true;
+            }
 
+            renderer->Paint();
             
             glfwSwapBuffers(window);
       }
