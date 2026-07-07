@@ -101,8 +101,9 @@ public:
             glm::mat4 VP = projection * cam->GetViewMatrix();
 
             float near_plane = 1.0f, far_plane = 7.5f;
+            glm::vec3 light_pos = glm::vec3(-2.0f, 5.0f, -1.0f);
             glm::mat4 light_projection = glm::ortho(-10.f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);            
-            glm::mat4 light_view = glm::lookAt(glm::vec3(-2.0f, 5.0f, -1.0f), glm::vec3(0.0f), glm::vec3(0,1,0));
+            glm::mat4 light_view = glm::lookAt(light_pos, glm::vec3(0.0f), glm::vec3(0,1,0));
             glm::mat4 light_space_matrix = light_projection * light_view;
 
             //render shadow
@@ -176,6 +177,7 @@ public:
                   glUniformMatrix4fv(SCENE_N_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(N_MW));
                   glUniformMatrix4fv(SCENE_MVP_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MVP));
                   glUniformMatrix4fv(SCENE_LIGHT_SPACE_MATRIX_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(light_space_matrix));
+                  glUniform3fv(SCENE_LIGHT_POS, 1, value_ptr(light_pos));
 
                   glActiveTexture(GL_TEXTURE0 + SCENE_SHADOW_MAP_TEXTURE_BINDING);
                   glBindTexture(GL_TEXTURE_2D, shadow_map_T);
