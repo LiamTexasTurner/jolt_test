@@ -49,7 +49,7 @@ public:
             m_shaders.SetVersion("440");
             m_shaders.SetPreambleFile("../penis/preamble.glsl");
             m_scene_SP = m_shaders.AddProgramFromExts({"../shaders/scene.vert", "../shaders/scene.frag"});
-            m_shadow_map_SP = m_shaders.AddProgramFromExts({"../shaders/shadow_mapping_depth.frag", "../shaders/shadow_mapping_depth.frag"});
+            m_shadow_map_SP = m_shaders.AddProgramFromExts({"../shaders/shadow_mapping_depth.vert", "../shaders/shadow_mapping_depth.frag"});
             m_debug_depth_map_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/debug_depth_map.frag"});
             m_blit_texture_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_texture.frag"});
             m_blit_test_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_test.frag"});
@@ -84,8 +84,8 @@ public:
       void Paint() override
       {
 
-            glClearColor(100.0f / 255.0f, 149.0f / 255.0f, 237.0f / 255.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            // glClearColor(100.0f / 255.0f, 149.0f / 255.0f, 237.0f / 255.0f, 1.0f);
+            // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             
             m_shaders.UpdatePrograms();
 
@@ -99,14 +99,14 @@ public:
 
             float near_plane = 1.0f, far_plane = 7.5f;
             glm::mat4 light_projection = glm::ortho(-10.f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);            
-            glm::mat4 light_view = glm::lookAt(glm::vec3(-2.0f, 20.0f, -1.0f), glm::vec3(0.0f), glm::vec3(0,1,0));
+            glm::mat4 light_view = glm::lookAt(glm::vec3(-2.0f, 5.0f, -1.0f), glm::vec3(0.0f), glm::vec3(0,1,0));
             glm::mat4 light_space_matrix = light_projection * light_view;
 
             //render shadow
-            glClear(GL_DEPTH_BUFFER_BIT);
-            glEnable(GL_DEPTH_TEST);     
-            glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
             glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_FBO);
+            glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+            glEnable(GL_DEPTH_TEST);     
+            glClear(GL_DEPTH_BUFFER_BIT);            
             glUseProgram(*m_shadow_map_SP);
             for(uint32_t instance_ID : m_scene->instances)
             {
@@ -213,19 +213,23 @@ public:
 
 
             //render debug depth map
-            // glUseProgram(*m_debug_depth_map_SP);
-            // glBindVertexArray(m_null_vao);
-            // glActiveTexture(GL_TEXTURE0 + DEBUG_DEPTH_MAP_TEXURE_BINDING);
-            // glBindTexture(GL_TEXTURE_2D, shadow_map_T);
-            // glUniform1f(DEBUG_DEPTH_MAP_NEAR_PLANE, near_plane);
-            // glUniform1f(DEBUG_DEPTH_MAP_FAR_PLANE, far_plane);
-            // glDrawArrays(GL_TRIANGLES, 0, 3);
-
-            glUseProgram(*m_blit_texture_SP);
+            glViewport(0,0,SCR_WIDTH, SCR_HEIGHT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glUseProgram(*m_debug_depth_map_SP);
             glBindVertexArray(m_null_vao);
-            glActiveTexture(GL_TEXTURE0 + BLIT_TEXTURE_TEXURE_BINDING);
+            glActiveTexture(GL_TEXTURE0 + DEBUG_DEPTH_MAP_TEXURE_BINDING);
             glBindTexture(GL_TEXTURE_2D, shadow_map_T);
+            glUniform1f(DEBUG_DEPTH_MAP_NEAR_PLANE, near_plane);
+            glUniform1f(DEBUG_DEPTH_MAP_FAR_PLANE, far_plane);
             glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            // glViewport(0,0, SCR_WIDTH, SCR_HEIGHT);
+            // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            // glUseProgram(*m_blit_texture_SP);
+            // glBindVertexArray(m_null_vao);
+            // glActiveTexture(GL_TEXTURE0 + BLIT_TEXTURE_TEXURE_BINDING);
+            // glBindTexture(GL_TEXTURE_2D, shadow_map_T);
+            // glDrawArrays(GL_TRIANGLES, 0, 3);
             
 
 
