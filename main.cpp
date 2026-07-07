@@ -90,9 +90,7 @@ int main()
             renderer->Paint();
             
             glfwSwapBuffers(window);
-      }
-
-      
+      }      
       return 0;
 }
 
