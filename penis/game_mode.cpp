@@ -15,6 +15,7 @@ public:
 
       std::vector<Entity> entities;      
       Scene* m_scene;
+      IRenderer* m_renderer;
       GLFWwindow* m_window;
       
 
@@ -25,6 +26,8 @@ public:
       void Init(Scene* scene, GLFWwindow* window, IRenderer* renderer) override
       {
             m_scene = scene;
+
+            m_renderer = renderer;
 
             m_window = window;
 
@@ -89,6 +92,10 @@ public:
             if(key_inputs.space.pressed)
             {
                   RemoveInstance(*m_scene, entities.back().instance_ID);      
+            }
+            if(key_inputs.tab.pressed)
+            {
+                  m_renderer->DrawDebugQuad();
             }
       }
 };

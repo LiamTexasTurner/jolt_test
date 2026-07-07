@@ -1,7 +1,7 @@
 in vec2 oTexCoord;
 out vec4 FragCol;
 
-layout(location = DEBUG_DEPTH_MAP_TEXURE_BINDING)
+layout(binding = DEBUG_DEPTH_MAP_TEXURE_BINDING)
 uniform sampler2D depth_map;
 
 layout(location = DEBUG_DEPTH_MAP_NEAR_PLANE)

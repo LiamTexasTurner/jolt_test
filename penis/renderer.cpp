@@ -40,6 +40,8 @@ public:
       bool render_shadow_map = false;
 
       GLuint m_null_vao;
+
+      void DrawDebugQuad(){render_shadow_map = !render_shadow_map;}
       
       
       void Init(Scene* scene) override
@@ -173,8 +175,10 @@ public:
                   glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
                   glUniformMatrix4fv(SCENE_N_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(N_MW));
                   glUniformMatrix4fv(SCENE_MVP_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MVP));
+                  glUniformMatrix4fv(SCENE_LIGHT_SPACE_MATRIX_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(light_space_matrix));
 
-                  glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
+                  glActiveTexture(GL_TEXTURE0 + SCENE_SHADOW_MAP_TEXTURE_BINDING);
+                  glBindTexture(GL_TEXTURE_2D, shadow_map_T);
                   glBindVertexArray(mesh->mesh_VAO);
                   for(size_t mesh_draw_index = 0; mesh_draw_index < mesh->draw_commands.size(); mesh_draw_index++)
                   {
@@ -206,13 +210,11 @@ public:
                   }
                   
                   glBindVertexArray(0);
-
-
             }
             glUseProgram(0);
             glDisable(GL_DEPTH_TEST);
 
-
+      
             if(render_shadow_map)
             {
                   glViewport(0,0,SCR_WIDTH, SCR_HEIGHT);
@@ -223,9 +225,7 @@ public:
                   glUniform1f(DEBUG_DEPTH_MAP_NEAR_PLANE, near_plane);
                   glUniform1f(DEBUG_DEPTH_MAP_FAR_PLANE, far_plane);
                   glDrawArrays(GL_TRIANGLES, 0, 3);
-            }
-                  
-            
+            }            
       }
 };
       

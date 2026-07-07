@@ -67,7 +67,7 @@ void Camera::UpdateFromInput(PlayerInput& player_input, float dt)
       mouse_data.dx = 0.0f;
       mouse_data.dy = 0.0f;
 
-      flying_speed = std::clamp(flying_speed + mouse_data.scroll, 1.0f, 50.0f);
+      flying_speed = std::clamp(flying_speed + (mouse_data.scroll / 2), 0.5f, 50.0f);
       mouse_data.scroll = 0;
 
       //key

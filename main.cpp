@@ -175,6 +175,8 @@ void process_input(GLFWwindow *window)
 
       glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS ? press_key(player_input.key_inputs.space) : release_key(player_input.key_inputs.space);
 
+      glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS ? press_key(player_input.key_inputs.tab) : release_key(player_input.key_inputs.tab);
+
       glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ? press_key(player_input.key_inputs.shift) : release_key(player_input.key_inputs.shift);
       
       glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ? press_key(player_input.key_inputs.ctrl) : release_key(player_input.key_inputs.ctrl);
