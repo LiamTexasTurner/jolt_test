@@ -12,6 +12,7 @@
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_wheel_callback(GLFWwindow* window, double x_offset, double y_offset);
 void process_input(GLFWwindow *window);
 
 GameData game_data;
@@ -62,6 +63,7 @@ int main()
       glfwMakeContextCurrent(window);
       glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
       glfwSetCursorPosCallback(window, mouse_callback);
+      glfwSetScrollCallback(window, scroll_wheel_callback);
       glfwSetWindowUserPointer(window, &game_data);
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -134,6 +136,14 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
       mouse_data.last_y = ypos;
 }
 
+void scroll_wheel_callback(GLFWwindow* window, double x_offset, double y_offset)
+{
+      GameData* gd = static_cast<GameData*>(glfwGetWindowUserPointer(window));
+      MouseData& mouse_data = gd->player_input.mouse_data;
+
+      mouse_data.scroll = y_offset;
+}
+
 void process_input(GLFWwindow *window)
 {
       if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS)
@@ -169,4 +179,8 @@ void process_input(GLFWwindow *window)
       glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS ? press_key(player_input.key_inputs.rmb) : release_key(player_input.key_inputs.rmb);
      
       glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS ? press_key(player_input.key_inputs.lmb) : release_key(player_input.key_inputs.lmb);
+
+      
+
+      
 }

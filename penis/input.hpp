@@ -34,6 +34,8 @@ struct MouseData
       float last_x = 0.0f;
       float last_y = 0.0f;
       bool first_mouse = true;
+      int scroll;
+      
 };
 
 struct PlayerInput

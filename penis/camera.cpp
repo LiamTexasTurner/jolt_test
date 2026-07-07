@@ -3,6 +3,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <iostream>
 #include "input.hpp"
+#include "algorithm"
 
 
 Camera::Camera()
@@ -65,6 +66,9 @@ void Camera::UpdateFromInput(PlayerInput& player_input, float dt)
       pitch += mouse_data.dy *  sensitivity;
       mouse_data.dx = 0.0f;
       mouse_data.dy = 0.0f;
+
+      flying_speed = std::clamp(flying_speed + mouse_data.scroll, 1.0f, 50.0f);
+      mouse_data.scroll = 0;
 
       //key
       switch (cam_type)
