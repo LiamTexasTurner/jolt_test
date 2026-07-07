@@ -1,21 +1,13 @@
-// This shader renders a fullscreen triangle and outputs texcoords
-// Call it by rendering 1 triangle, hook up your own fragment shader to it.
-// Texcoords follow GL conventions.
+layout(location = SCENE_POSITION_ATTRIB_LOCATION)
+in vec4 Position;
 
-layout(location = BLIT_TEXCOORD_VARYING_LOCATION) out vec2 oTexCoord;
+layout(location = SHADOW_MAP_LIGHT_SPACE_MATRIX_UNIFORM_LOCATION)
+uniform mat4 lightSpaceMatrix;
+
+layout(location = SHADOW_MAP_MW_UNIFORM_LOCATION)
+uniform mat4 model;
 
 void main()
 {
-    vec4 pos;
-    pos.x = float(gl_VertexID / 2) * 4.0 - 1.0;
-    pos.y = float(gl_VertexID % 2) * 4.0 - 1.0;
-    pos.z = 0.0;
-    pos.w = 1.0;
-
-    vec2 tc;
-    tc.x = float(gl_VertexID / 2) * 2.0;
-    tc.y = float(gl_VertexID % 2) * 2.0;
-
-    gl_Position = pos;
-    oTexCoord = tc;
+  gl_Position = lightSpaceMatrix * model * vec4(Position, 1.0);
 }

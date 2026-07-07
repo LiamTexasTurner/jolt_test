@@ -23,11 +23,15 @@ public:
 
       ShaderSet m_shaders;
       GLuint* m_scene_SP;
-      GLuint* m_bilt_test;
+      GLuint* m_shadow_map_SP;
+      GLuint* m_debug_depth_map_SP;
+      GLuint* m_blit_test_SP;
 
       GLuint back_buffer_FBO;
       GLuint back_buffer_CT;
       GLuint back_buffer_DT;
+      unsigned int SCR_WIDTH;
+      unsigned int SCR_HEIGHT;
 
       GLuint shadow_map_FBO;
       GLuint shadow_map_T;
@@ -44,7 +48,9 @@ public:
             m_shaders.SetVersion("440");
             m_shaders.SetPreambleFile("../penis/preamble.glsl");
             m_scene_SP = m_shaders.AddProgramFromExts({"../shaders/scene.vert", "../shaders/scene.frag"});
-            m_bilt_test = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/shadow_mapping_depth.frag"});
+            m_shadow_map_SP = m_shaders.AddProgramFromExts({"../shaders/shadow_mapping_depth.frag", "../shaders/shadow_mapping_depth.frag"});
+            m_debug_depth_map_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/debug_depth_map.frag"});
+            m_blit_test_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_test.frag"});
 
 
             glGenVertexArrays(1, &m_null_vao);
@@ -54,8 +60,11 @@ public:
 
       void Resize(int width, int height) override
       {
+            SCR_WIDTH = width;
+            SCR_HEIGHT = height;
             glGenFramebuffers(1, &shadow_map_FBO);
             glGenTextures(1, &shadow_map_T);
+            
             glBindTexture(GL_TEXTURE_2D, shadow_map_T);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -81,14 +90,63 @@ public:
 
 
             glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 300.0f);
-            Camera* cam = &m_scene->cameras[m_scene->main_camera_ID];
-            glm::mat4 VP = projection * cam->GetViewMatrix();
             
+            Camera* cam = &m_scene->cameras[m_scene->main_camera_ID];
+
+            glm::mat4 VP = projection * cam->GetViewMatrix();
+
+            float near_plane = 1.0f, far_plane = 7.5f;
+            glm::mat4 light_projection = glm::ortho(-10.f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);            
+            glm::mat4 light_view = glm::lookAt(glm::vec3(-2.0f, 20.0f, -1.0f), glm::vec3(0.0f), glm::vec3(0,1,0));
+            glm::mat4 light_space_matrix = light_projection * light_view;
+
+            //render shadow
+            glClear(GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);     
+            glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+            glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_FBO);
+            glUseProgram(*m_shadow_map_SP);
+            for(uint32_t instance_ID : m_scene->instances)
+            {
+                  const Instance* instance = &m_scene->instances[instance_ID];
+                  const Mesh* mesh = &m_scene->meshes[instance->mesh_ID];
+                  Transform* transform = &m_scene->transforms[instance->transform_ID];
+                  transform->scale = glm::vec3(1.0f);
+      
+                  glm::mat4 MW = glm::mat4(1.0f);
+                  MW = translate(-transform->rotation_origin) * MW;
+                  MW = mat4_cast(transform->rotation) * MW;
+                  MW = translate(transform->rotation_origin) * MW;
+                  MW = scale(transform->scale) * MW;
+                  MW = translate(transform->translation) * MW;
+
+                  glUniformMatrix4fv(SHADOW_MAP_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
+                  glUniformMatrix4fv(SHADOW_MAP_LIGHT_SPACE_MATRIX_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(light_space_matrix));
+
+                  glBindVertexArray(mesh->mesh_VAO);
+                  for(size_t mesh_draw_index = 0; mesh_draw_index < mesh->draw_commands.size(); mesh_draw_index++)
+                  {
+                        const GLDrawElementsIndirectCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index];
+                        glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES,
+                                                                      draw_cmd->count,
+                                                                      GL_UNSIGNED_INT,
+                                                                      (GLvoid*)(sizeof(uint32_t) * draw_cmd->firstIndex),
+                                                                      draw_cmd->primCount,
+                                                                      draw_cmd->baseVertex,
+                                                                      draw_cmd->baseInstance);
+                  }                  
+                  glBindVertexArray(0);
+            }
+            glUseProgram(0);
+            glDisable(GL_DEPTH_TEST);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+            //render scene
             glUseProgram(*m_scene_SP);
-
             glUniform3fv(SCENE_CAMERAPOS_UNIFORM_LOCATION, 1, glm::value_ptr(cam->translation));
-
             glEnable(GL_DEPTH_TEST);
+            glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
             for(uint32_t instance_ID : m_scene->instances)
             {
                   const Instance* instance = &m_scene->instances[instance_ID];
@@ -114,7 +172,6 @@ public:
                   glUniformMatrix4fv(SCENE_MVP_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MVP));
 
                   glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
-
                   glBindVertexArray(mesh->mesh_VAO);
                   for(size_t mesh_draw_index = 0; mesh_draw_index < mesh->draw_commands.size(); mesh_draw_index++)
                   {
@@ -149,14 +206,22 @@ public:
 
 
             }
-            // glDepthFunc(GL_LESS);
-            glDisable(GL_DEPTH_TEST);            
+            glUseProgram(0);
+            glDisable(GL_DEPTH_TEST);
 
-            // glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_FBO);
-            glUseProgram(*m_bilt_test);
+
+            //render debug depth map
+            glUseProgram(*m_debug_depth_map_SP);
             glBindVertexArray(m_null_vao);
+            glActiveTexture(GL_TEXTURE0 + DEBUG_DEPTH_MAP_TEXURE_BINDING);
+            glBindTexture(GL_TEXTURE_2D, shadow_map_T);
+            glUniform1f(DEBUG_DEPTH_MAP_NEAR_PLANE, near_plane);
+            glUniform1f(DEBUG_DEPTH_MAP_FAR_PLANE, far_plane);
             glDrawArrays(GL_TRIANGLES, 0, 3);
+            
 
+
+            
 
       }
 };
