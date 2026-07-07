@@ -7,12 +7,18 @@
 #include "penis/renderer.hpp"
 #include "penis/game_mode.hpp"
 #include "penis/input.hpp"
-#include "penis/globals.hpp"
+
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void process_input(GLFWwindow *window, KeyInputs& key_input);
+void process_input(GLFWwindow *window);
+
+GameData game_data;
+
+bool full_screen = false;
+unsigned int SCR_WIDTH = 1920;
+unsigned int SCR_HEIGHT = 1080;
 
 int main()
 {
@@ -69,7 +75,7 @@ int main()
 
       //Gamemode
       IGameMode* game_mode = NewGameMode();
-      game_mode->Init(&scene, renderer);
+      game_mode->Init(&scene, window, renderer);
             
 
 
@@ -77,14 +83,10 @@ int main()
       {
             glfwPollEvents();
             game_data.mouse_dx = 0.0f;
-            game_data.mouse_dy = 0.0f;
-            
-            process_input(window, player_input);
+            game_data.mouse_dy = 0.0f;      
+            process_input(window);
 
-            if (player_input.space.pressed)
-            {
-                  game_mode->HandleEvent();
-            }
+            game_mode->Update();
 
             renderer->Paint();
             
@@ -97,6 +99,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
       glViewport(0, 0, width, height);
 }
+
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
       GameData* gd = static_cast<GameData*>(glfwGetWindowUserPointer(window));
@@ -118,32 +121,35 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
       gd->last_y = ypos;
 }
 
-void process_input(GLFWwindow *window, KeyInputs& key_input)
+void process_input(GLFWwindow *window)
 {
       if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS)
       {
             glfwSetWindowShouldClose(window, true);
       }
 
-      glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS ? press_key(key_input.W) : release_key(key_input.W);
+      GameData* gd = static_cast<GameData*>(glfwGetWindowUserPointer(window));
+      PlayerInput& player_input = gd->player_input;
 
-      glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS ? press_key(key_input.A) : release_key(key_input.A);
+      glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS ? press_key(player_input.key_inputs.W) : release_key(player_input.key_inputs.W);
+
+      glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS ? press_key(player_input.key_inputs.A) : release_key(player_input.key_inputs.A);
       
-      glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS ? press_key(key_input.S) : release_key(key_input.S);
+      glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS ? press_key(player_input.key_inputs.S) : release_key(player_input.key_inputs.S);
       
-      glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS ? press_key(key_input.D) : release_key(key_input.D);
+      glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS ? press_key(player_input.key_inputs.D) : release_key(player_input.key_inputs.D);
 
-      glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS ? press_key(key_input.C) : release_key(key_input.C);
+      glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS ? press_key(player_input.key_inputs.C) : release_key(player_input.key_inputs.C);
 
-      glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS ? press_key(key_input.V) : release_key(key_input.V);
+      glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS ? press_key(player_input.key_inputs.V) : release_key(player_input.key_inputs.V);
 
-      glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS ? press_key(key_input.space) : release_key(key_input.space);
+      glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS ? press_key(player_input.key_inputs.space) : release_key(player_input.key_inputs.space);
 
-      glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ? press_key(key_input.shift) : release_key(key_input.shift);
+      glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ? press_key(player_input.key_inputs.shift) : release_key(player_input.key_inputs.shift);
       
-      glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ? press_key(key_input.ctrl) : release_key(key_input.ctrl);
+      glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ? press_key(player_input.key_inputs.ctrl) : release_key(player_input.key_inputs.ctrl);
 
-      glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS ? press_key(key_input.rmb) : release_key(key_input.rmb);
+      glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS ? press_key(player_input.key_inputs.rmb) : release_key(player_input.key_inputs.rmb);
      
-      glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS ? press_key(key_input.lmb) : release_key(key_input.lmb);
+      glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS ? press_key(player_input.key_inputs.lmb) : release_key(player_input.key_inputs.lmb);
 }

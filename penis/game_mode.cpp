@@ -2,6 +2,8 @@
 #include "scene.hpp"
 #include "renderer.hpp"
 #include "entity.hpp"
+#include "GLFW/glfw3.h"
+#include "input.hpp"
 
 using namespace std;
 
@@ -9,15 +11,20 @@ class GameMode : public IGameMode
 {
 public:
 
+      std::vector<Entity> entities;      
+      Scene* m_scene;
+      GLFWwindow* m_window;
       
 
       bool m_first_update;
 
       unsigned int m_last_update_tick;
 
-      void Init(Scene* scene, IRenderer* renderer) override
+      void Init(Scene* scene, GLFWwindow* window, IRenderer* renderer) override
       {
             m_scene = scene;
+
+            m_window = window;
 
             m_first_update = true;
 
@@ -64,7 +71,20 @@ public:
       void HandleEvent() override
       {
 
-            RemoveInstance(*m_scene, entities.back().instance_ID);
+            
+      }
+
+      void Update() override
+      {
+            GameData* gd = static_cast<GameData*>(glfwGetWindowUserPointer(m_window));
+            PlayerInput& player_input = gd->player_input;
+            KeyInputs& key_inputs = player_input.key_inputs;
+            MouseData& mouse_data = player_input.mouse_data;
+
+            if(key_inputs.space.pressed)
+            {
+                  RemoveInstance(*m_scene, entities.back().instance_ID);      
+            }
       }
 };
 
