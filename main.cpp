@@ -20,6 +20,12 @@ bool full_screen = false;
 unsigned int SCR_WIDTH = 1920;
 unsigned int SCR_HEIGHT = 1080;
 
+
+double last_time = 0.0;
+double accumulator = 0.0;
+double now = 0.0;
+double delta_time = 0.0;
+
 int main()
 {
 
@@ -76,17 +82,23 @@ int main()
       //Gamemode
       IGameMode* game_mode = NewGameMode();
       game_mode->Init(&scene, window, renderer);
-            
 
-
+      
       while(!glfwWindowShouldClose(window))
       {
-            glfwPollEvents();
-            game_data.mouse_dx = 0.0f;
-            game_data.mouse_dy = 0.0f;      
+            now = glfwGetTime();
+            delta_time = now - last_time;
+            last_time = now;
+
+            // if (delta_time > 0.25)
+            // {
+            //       delta_time = 0.25;
+            // }
+            
+            glfwPollEvents();      
             process_input(window);
 
-            game_mode->Update();
+            game_mode->Update(delta_time);
 
             renderer->Paint();
             
@@ -103,22 +115,23 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
       GameData* gd = static_cast<GameData*>(glfwGetWindowUserPointer(window));
+      MouseData& mouse_data = gd->player_input.mouse_data;
 
       float xpos = static_cast<float>(xposIn);
       float ypos = static_cast<float>(yposIn);
 
-      if (gd->first_mouse)
+      if (mouse_data.first_mouse)
       {
-            gd->last_x = xpos;
-            gd->last_y = ypos;
-            gd->first_mouse = false;
+            mouse_data.last_x = xpos;
+            mouse_data.last_y = ypos;
+            mouse_data.first_mouse = false;
       }
 
-      gd->mouse_dx += (xpos - gd->last_x);
-      gd->mouse_dy += (gd->last_y - ypos);
+      mouse_data.dx += (xpos - mouse_data.last_x);
+      mouse_data.dy += (mouse_data.last_y - ypos);
 
-      gd->last_x = xpos;
-      gd->last_y = ypos;
+      mouse_data.last_x = xpos;
+      mouse_data.last_y = ypos;
 }
 
 void process_input(GLFWwindow *window)
@@ -138,6 +151,10 @@ void process_input(GLFWwindow *window)
       glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS ? press_key(player_input.key_inputs.S) : release_key(player_input.key_inputs.S);
       
       glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS ? press_key(player_input.key_inputs.D) : release_key(player_input.key_inputs.D);
+
+      glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS ? press_key(player_input.key_inputs.E) : release_key(player_input.key_inputs.E);
+
+      glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS ? press_key(player_input.key_inputs.Q) : release_key(player_input.key_inputs.Q);
 
       glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS ? press_key(player_input.key_inputs.C) : release_key(player_input.key_inputs.C);
 

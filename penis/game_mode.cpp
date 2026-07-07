@@ -5,6 +5,8 @@
 #include "GLFW/glfw3.h"
 #include "input.hpp"
 
+#include <iostream>
+
 using namespace std;
 
 class GameMode : public IGameMode
@@ -64,7 +66,7 @@ public:
             }
 
             
-            Camera main_camera(glm::vec3(0.0f, 2.0f, -10.0f), glm::vec3(0,1,0), glm::vec3(1,0,0), 0.0f, 0.0f);
+            Camera main_camera(glm::vec3(0.0f, 2.0f, -10.0f), glm::vec3(0,1,0), glm::vec3(1,0,0), 0.0f, 0.0f, CamType::flying);
             m_scene->main_camera_ID = m_scene->cameras.insert((main_camera));
       }
 
@@ -74,13 +76,16 @@ public:
             
       }
 
-      void Update() override
+      void Update(float dt) override
       {
             GameData* gd = static_cast<GameData*>(glfwGetWindowUserPointer(m_window));
             PlayerInput& player_input = gd->player_input;
             KeyInputs& key_inputs = player_input.key_inputs;
             MouseData& mouse_data = player_input.mouse_data;
 
+            Camera& main_camera = m_scene->cameras[m_scene->main_camera_ID];
+            main_camera.UpdateFromInput(player_input, dt);
+                  
             if(key_inputs.space.pressed)
             {
                   RemoveInstance(*m_scene, entities.back().instance_ID);      

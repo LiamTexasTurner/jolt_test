@@ -20,6 +20,8 @@ struct KeyInputs
       KeyInput A;
       KeyInput S;
       KeyInput D;
+      KeyInput E;
+      KeyInput Q;
       KeyInput C;
       KeyInput V;
       
@@ -29,6 +31,9 @@ struct MouseData
 {
       float dx;
       float dy;
+      float last_x = 0.0f;
+      float last_y = 0.0f;
+      bool first_mouse = true;
 };
 
 struct PlayerInput
@@ -59,17 +64,6 @@ inline void release_key(KeyInput &key)
 struct GameData
 {
       PlayerInput player_input;
-      //mouse
-      int src_width = 0;
-      int src_height = 0;
-      float last_x = 0.0f;
-      float last_y = 0.0f;
-      bool first_mouse = true;
-      float mouse_dx = 0.0f;
-      float mouse_dy = 0.0f;
-
-      bool cursor_active = false;
-
 };
 
 
