@@ -23,6 +23,7 @@ public:
 
       ShaderSet m_shaders;
       GLuint* m_scene_SP;
+      GLuint* m_bilt_test;
 
       GLuint back_buffer_FBO;
       GLuint back_buffer_CT;
@@ -30,6 +31,9 @@ public:
 
       GLuint shadow_map_FBO;
       GLuint shadow_map_T;
+      const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+
+      GLuint m_null_vao;
       
       
       void Init(Scene* scene) override
@@ -39,7 +43,31 @@ public:
 
             m_shaders.SetVersion("440");
             m_shaders.SetPreambleFile("../penis/preamble.glsl");
-            m_scene_SP = m_shaders.AddProgramFromExts({"../shaders/scene.vert", "../shaders/scene.frag"});            
+            m_scene_SP = m_shaders.AddProgramFromExts({"../shaders/scene.vert", "../shaders/scene.frag"});
+            m_bilt_test = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/shadow_mapping_depth.frag"});
+
+
+            glGenVertexArrays(1, &m_null_vao);
+            glBindVertexArray(m_null_vao);
+            glBindVertexArray(0);
+      }
+
+      void Resize(int width, int height) override
+      {
+            glGenFramebuffers(1, &shadow_map_FBO);
+            glGenTextures(1, &shadow_map_T);
+            glBindTexture(GL_TEXTURE_2D, shadow_map_T);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            // attach depth texture as FBO's depth buffer
+            glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_FBO);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadow_map_T, 0);
+            glDrawBuffer(GL_NONE);
+            glReadBuffer(GL_NONE);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
       }
 
       void Paint() override
@@ -118,9 +146,18 @@ public:
                   }
                   
                   glBindVertexArray(0);
+
+
             }
             // glDepthFunc(GL_LESS);
-            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_DEPTH_TEST);            
+
+            // glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_FBO);
+            glUseProgram(*m_bilt_test);
+            glBindVertexArray(m_null_vao);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+
       }
 };
       

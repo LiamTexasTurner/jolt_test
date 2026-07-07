@@ -81,9 +81,12 @@ int main()
       IRenderer* renderer = NewRenderer();
       renderer->Init(&scene);
 
+      renderer->Resize(SCR_WIDTH, SCR_HEIGHT);
+
       //Gamemode
       IGameMode* game_mode = NewGameMode();
       game_mode->Init(&scene, window, renderer);
+      
 
       
       while(!glfwWindowShouldClose(window))
