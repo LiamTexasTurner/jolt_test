@@ -5,7 +5,7 @@ void main()
             gl_FragCoord.z;
 
       float bias =
-            fwidth(depth) * 3;
+            fwidth(depth) * 4;
 
       gl_FragDepth =
             min(depth + bias, 1.0);

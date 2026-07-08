@@ -43,7 +43,7 @@ public:
                         uint32_t new_instance_ID;
                         AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
                         uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-                        scene->transforms[new_instance_ID].translation = glm::vec3(0,0,0);
+                        scene->transforms[new_instance_ID].translation = glm::vec3(0,-0.1,0);
                         scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
                         entities.emplace_back(Entity(new_instance_ID));
                   }
@@ -51,7 +51,7 @@ public:
                         uint32_t new_instance_ID;
                         AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
                         uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-                        scene->transforms[new_instance_ID].translation = glm::vec3(2,0,0);
+                        scene->transforms[new_instance_ID].translation = glm::vec3(2,-0.1,0);
                         scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
                         entities.emplace_back(Entity(new_instance_ID));
                   }

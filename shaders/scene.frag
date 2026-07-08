@@ -13,6 +13,9 @@ uniform int HasDiffuseMap;
 layout(location = SCENE_LIGHT_POS)
 uniform vec3 lightPos;
 
+layout(location = SCENE_LIGHT_COLOR)
+uniform vec3 light_color;
+
 layout(binding = SCENE_DIFFUSE_MAP_TEXTURE_BINDING)
 uniform sampler2D DiffuseMap;
 
@@ -40,25 +43,26 @@ float shadowCalculation(vec4 fragPosLightSpace)
 void main()
 {
 
-  vec3 color = texture(DiffuseMap, fTexCoord).rbg;
+  vec4 color = texture(DiffuseMap, fTexCoord);
   
   vec3 normal = normalize(fWorldNormal);
 
-  vec3 lightColor = vec3(1,1,1);
+  vec3 lightColor = vec3(0.6, 0.6, 0.6);
 
   vec3 lightDir = normalize(lightPos);
 
-  vec3 ambient = 0.15 * lightColor;
+  vec3 ambient = 0.3 * light_color;
 
   float diff = max(dot(lightDir, normal), 0.0);
-  vec3 diffuse = diff * lightColor;
+  vec3 diffuse = diff * light_color;
 
   float shadow = shadowCalculation(fFragPosLightSpace);
 
-  vec3 lighting = (ambient + (1.0 - shadow) * diffuse) * color;
+  vec3 lighting = (ambient + (1.0 - shadow) * diffuse) * color.rgb;
     
   
   FragColor = vec4(lighting, 1.0);
+  // FragColor = color;
 }
 
 
