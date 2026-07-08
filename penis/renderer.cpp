@@ -106,14 +106,14 @@ public:
 
             glm::mat4 VP = projection * cam->GetViewMatrix();
 
-            float near_plane = -1.0f, far_plane = 7.5f;
-            float ortho_size = 20.0f;
+            float near_plane = -1.0f, far_plane = 20.5f;
+            float ortho_size = 10.0f;
             glm::vec3 light_pos = glm::vec3(-2.0f, 10.0f, -1.0f);
             
             glm::mat4 light_projection = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near_plane, far_plane);
-            glm::mat4 light_view = glm::lookAt(glm::vec3(-2.0f, 5.0f, 0.0f), 
-                                                     glm::vec3(0.0f), 
-                                                     glm::vec3( 0.0f, 1.0f,  0.0f));
+            glm::mat4 light_view = glm::lookAt(light_pos, 
+                                               glm::vec3(0.0f), 
+                                               glm::vec3( 0.0f, 1.0f,  0.0f));
             glm::mat4 light_space_matrix = light_projection * light_view;
 
             //render shadow
@@ -187,7 +187,8 @@ public:
                   MW = translate(transform->translation) * MW;
 
                   glm::mat4 MVP = VP * MW;
-      
+
+                        
                   glm::mat3 N_MW = glm::mat4(1.0f);
                   N_MW = mat3_cast(transform->rotation) * N_MW;
                   N_MW = glm::mat3(scale(1.0f / transform->scale)) * N_MW;

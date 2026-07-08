@@ -96,6 +96,7 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
 
       vector<float> positions;
       vector<float> tex_coords;
+      vector<float> normals;
       vector<uint32_t> indices;
 
       for(int i = 0; i < data->nodes_count; i++)
@@ -136,6 +137,13 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                               load_attribute(attribute, 2, prim_tex_coords);
 
                               tex_coords.insert(tex_coords.end(), prim_tex_coords.begin(), prim_tex_coords.end());     
+                        }
+                        if(primitive->attributes[attrib_index].type == cgltf_attribute_type_normal)
+                        {
+                              cgltf_accessor* attribute = primitive->attributes[attrib_index].data;
+                              vector<float> prim_normals(attribute->count * 3);
+                              load_attribute(attribute, 3, prim_normals);
+                              normals.insert(normals.end(), prim_normals.begin(), prim_normals.end());
                         }
 
                   }
@@ -185,19 +193,25 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
       glGenVertexArrays(1, &mesh_result.mesh_VAO);
       glGenBuffers(1, &mesh_result.postion_BO);
       glGenBuffers(1, &mesh_result.tex_coord_BO);
+      glGenBuffers(1, &mesh_result.normal_BO);
       glGenBuffers(1, &mesh_result.index_BO);
 
       glBindVertexArray(mesh_result.mesh_VAO);
 
       glBindBuffer(GL_ARRAY_BUFFER, mesh_result.postion_BO);
       glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), positions.data(), GL_STATIC_DRAW);
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
-      glEnableVertexAttribArray(0);
+      glVertexAttribPointer(SCENE_POSITION_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
+      glEnableVertexAttribArray(SCENE_POSITION_ATTRIB_LOCATION);
 
       glBindBuffer(GL_ARRAY_BUFFER, mesh_result.tex_coord_BO);
       glBufferData(GL_ARRAY_BUFFER, tex_coords.size() * sizeof(tex_coords[0]), tex_coords.data(), GL_STATIC_DRAW);
-      glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
-      glEnableVertexAttribArray(1);
+      glVertexAttribPointer(SCENE_TEXCOORD_ATTRIB_LOCATION, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
+      glEnableVertexAttribArray(SCENE_TEXCOORD_ATTRIB_LOCATION);
+
+      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.normal_BO);
+      glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(normals[0]), normals.data(), GL_STATIC_DRAW);
+      glVertexAttribPointer(SCENE_NORMAL_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
+      glEnableVertexAttribArray(SCENE_NORMAL_ATTRIB_LOCATION);
      
 
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_result.index_BO);

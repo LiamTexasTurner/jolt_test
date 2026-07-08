@@ -41,6 +41,7 @@ struct Mesh
       GLuint mesh_VAO;
       GLuint postion_BO;
       GLuint tex_coord_BO;
+      GLuint normal_BO;
       GLuint index_BO;
 
       GLuint index_count;

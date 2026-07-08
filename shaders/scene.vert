@@ -29,7 +29,8 @@ void main()
 {  
     fWorldPosition = (MW * Position).xyz;
     fTexCoord = TexCoord;
-    fWorldNormal = N_MW * Normal;
+    // fWorldNormal = N_MW * Normal;
+    fWorldNormal = mat3(transpose(inverse(MW))) * Normal;
     fFragPos = vec3(MW * Position);
     fFragPosLightSpace = lightSpaceMatrix * vec4(fFragPos, 1.0);
     gl_Position = MVP * Position;    
