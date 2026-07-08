@@ -15,6 +15,7 @@ add_executable(SceneRenderer
   penis/shaderset.cpp
   penis/camera.cpp
   penis/entity.cpp
+  penis/skybox.cpp
 
 )
 

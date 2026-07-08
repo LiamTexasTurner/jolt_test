@@ -17,7 +17,9 @@ public:
       Scene* m_scene;
       IRenderer* m_renderer;
       GLFWwindow* m_window;
-      
+
+
+      uint32_t current_skybox;
 
       bool m_first_update;
 
@@ -67,6 +69,8 @@ public:
                   uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
                   scene->transforms[new_instance_ID].translation = glm::vec3(0,0,0);
             }
+
+            AddSkybox(*m_scene, &current_skybox);
 
             
             Camera main_camera(glm::vec3(0.0f, 2.0f, -10.0f), glm::vec3(0,1,0), glm::vec3(1,0,0), 0.0f, 0.0f, CamType::flying);

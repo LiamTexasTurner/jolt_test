@@ -4,6 +4,7 @@
 #include "stb_image.h"
 #include "cgltf.h"
 
+
 #include <iostream>
 
 using namespace std;
@@ -34,6 +35,7 @@ void Scene::Init()
       transforms   = packed_freelist<Transform>(4096);
       instances    = packed_freelist<Instance>(4096);
       cameras      = packed_freelist<Camera>(32);
+      skyboxes     = packed_freelist<Skybox>(32);
 }
 
 void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mesh_IDs)
@@ -235,6 +237,7 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
       
 }
 
+
 void AddInstance(Scene &scene, uint32_t mesh_ID, uint32_t *new_instance_ID)
 {
       Transform new_transform;
@@ -252,6 +255,12 @@ void AddInstance(Scene &scene, uint32_t mesh_ID, uint32_t *new_instance_ID)
             *new_instance_ID = tmp_new_instance_ID;
       }
 };
+
+void AddSkybox(Scene& scene, uint32_t* new_skybox_ID)
+{
+      Skybox new_skybox;
+      *new_skybox_ID = scene.skyboxes.insert(new_skybox);
+}
 
 void RemoveInstance(Scene& scene, uint32_t instance_ID)
 {

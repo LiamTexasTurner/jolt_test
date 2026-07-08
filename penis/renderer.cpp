@@ -11,6 +11,9 @@
 #include "glm/gtc/type_ptr.hpp"
 
 #include <iostream>
+#include <string>
+
+using namespace std;
 
 class Renderer : public IRenderer
 {
@@ -23,6 +26,7 @@ public:
       ShaderSet m_shaders;
       GLuint* m_scene_SP;
       GLuint* m_shadow_map_SP;
+      GLuint* m_skybox_SP;
       GLuint* m_debug_depth_map_SP;
       GLuint* m_blit_texture_SP;
       GLuint* m_blit_test_SP;
@@ -34,15 +38,18 @@ public:
       GLuint back_buffer_single_samp_CT;
       GLuint back_buffer_single_samp_DT;
       
-      int MSAA_SAMPLES = 16;      
+      
       GLuint back_buffer_multi_samp_FBO;
       GLuint back_buffer_multi_samp_CT;
       GLuint back_buffer_multi_samp_DT;
+      int MSAA_SAMPLES = 16;
 
       GLuint shadow_map_FBO;
       GLuint shadow_map_T;
       const unsigned int SHADOW_WIDTH = 4096 * 4, SHADOW_HEIGHT = 4096 * 4;
       bool render_shadow_map = false;
+
+      GLuint skybox_cubemap_CT;
 
       GLuint m_null_vao;
 
@@ -58,10 +65,10 @@ public:
             m_shaders.SetPreambleFile("../penis/preamble.glsl");
             m_scene_SP = m_shaders.AddProgramFromExts({"../shaders/scene.vert", "../shaders/scene.frag"});
             m_shadow_map_SP = m_shaders.AddProgramFromExts({"../shaders/shadow_mapping_depth.vert", "../shaders/shadow_mapping_depth.frag"});
+            m_skybox_SP = m_shaders.AddProgramFromExts({"../shaders/skybox.vert", "../shaders/skybox.frag"});
             m_debug_depth_map_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/debug_depth_map.frag"});
             m_blit_texture_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_texture.frag"});
             m_blit_test_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_test.frag"});
-
 
             glGenVertexArrays(1, &m_null_vao);
             glBindVertexArray(m_null_vao);
@@ -74,116 +81,98 @@ public:
             SCR_HEIGHT = height;
 
 
-
-            glDeleteTextures(1, &back_buffer_multi_samp_CT);
-            glGenTextures(1, &back_buffer_multi_samp_CT);
-            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, back_buffer_multi_samp_CT);
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, MSAA_SAMPLES, GL_RGB8, SCR_WIDTH, SCR_HEIGHT, GL_TRUE);
-            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-
-            glDeleteTextures(1, &back_buffer_multi_samp_DT);
-            glGenTextures(1, &back_buffer_multi_samp_DT);
-            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, back_buffer_multi_samp_DT);
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, MSAA_SAMPLES, GL_DEPTH_COMPONENT24, SCR_WIDTH, SCR_HEIGHT, GL_TRUE);
-            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-
-            glDeleteFramebuffers(1, &back_buffer_multi_samp_FBO);
-            glGenFramebuffers(1, &back_buffer_multi_samp_FBO);
-            glBindFramebuffer(GL_FRAMEBUFFER, back_buffer_multi_samp_FBO);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, back_buffer_multi_samp_CT, 0);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, back_buffer_multi_samp_DT, 0);
-            GLenum fbo_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-            if(fbo_status != GL_FRAMEBUFFER_COMPLETE)
+            //multi sample
             {
-                  std::cout << "check fbo " << std::endl;
+                  glDeleteTextures(1, &back_buffer_multi_samp_CT);
+                  glGenTextures(1, &back_buffer_multi_samp_CT);
+                  glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, back_buffer_multi_samp_CT);
+                  glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, MSAA_SAMPLES, GL_RGB8, SCR_WIDTH, SCR_HEIGHT, GL_TRUE);
+                  glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+
+                  glDeleteTextures(1, &back_buffer_multi_samp_DT);
+                  glGenTextures(1, &back_buffer_multi_samp_DT);
+                  glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, back_buffer_multi_samp_DT);
+                  glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, MSAA_SAMPLES, GL_DEPTH_COMPONENT24, SCR_WIDTH, SCR_HEIGHT, GL_TRUE);
+                  glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+
+                  glDeleteFramebuffers(1, &back_buffer_multi_samp_FBO);
+                  glGenFramebuffers(1, &back_buffer_multi_samp_FBO);
+                  glBindFramebuffer(GL_FRAMEBUFFER, back_buffer_multi_samp_FBO);
+                  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, back_buffer_multi_samp_CT, 0);
+                  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, back_buffer_multi_samp_DT, 0);
+                  GLenum fbo_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+                  if(fbo_status != GL_FRAMEBUFFER_COMPLETE)
+                  {
+                        std::cout << "check fbo multi " << std::endl;
+                  }
+                  glBindFramebuffer(GL_FRAMEBUFFER, 0);
             }
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            //single samp
+
+            //single sample
             {
-                  // Single-sampled resolve framebuffer.
-                  // Only a color texture is required because only color is being resolved.
-
                   glDeleteTextures(1, &back_buffer_single_samp_CT);
                   glGenTextures(1, &back_buffer_single_samp_CT);
-
                   glBindTexture(GL_TEXTURE_2D, back_buffer_single_samp_CT);
-
-                  glTexImage2D(
-                               GL_TEXTURE_2D,
-                               0,
-                               GL_RGB8,
-                               SCR_WIDTH,
-                               SCR_HEIGHT,
-                               0,
-                               GL_RGB,
-                               GL_UNSIGNED_BYTE,
-                               nullptr
-                               );
-
+                  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
                   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
                   glBindTexture(GL_TEXTURE_2D, 0);
 
 
                   glDeleteFramebuffers(1, &back_buffer_single_samp_FBO);
                   glGenFramebuffers(1, &back_buffer_single_samp_FBO);
-
                   glBindFramebuffer(GL_FRAMEBUFFER, back_buffer_single_samp_FBO);
+                  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D, back_buffer_single_samp_CT, 0);
 
-                  glFramebufferTexture2D(
-                                         GL_FRAMEBUFFER,
-                                         GL_COLOR_ATTACHMENT0,
-                                         GL_TEXTURE_2D,
-                                         back_buffer_single_samp_CT,
-                                         0
-                                         );
-
-                  GLenum single_samp_status =
-                        glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
+                  GLenum single_samp_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
                   if(single_samp_status != GL_FRAMEBUFFER_COMPLETE)
                   {
-                        std::cout
-                        << "Single sample FBO incomplete: 0x"
-                        << std::hex
-                        << single_samp_status
-                        << std::dec
-                        << '\n';
+                        std::cout << "check fbo single " << std::endl;
                   }
 
                   glBindFramebuffer(GL_FRAMEBUFFER, 0);
             }
+
+            // shadow maps
+            {
+
+                  glDeleteFramebuffers(1, &shadow_map_FBO);
+                  glGenFramebuffers(1, &shadow_map_FBO);
+
+                  glDeleteTextures(1, &shadow_map_T);
+                  glGenTextures(1, &shadow_map_T);
             
-            glGenFramebuffers(1, &shadow_map_FBO);
-            glGenTextures(1, &shadow_map_T);
+                  glBindTexture(GL_TEXTURE_2D, shadow_map_T);
+                  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+                  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+                  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+                  float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+                  glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
+                  // attach depth texture as FBO's depth buffer
+                  glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_FBO);
+                  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadow_map_T, 0);
+                  glDrawBuffer(GL_NONE);
+                  glReadBuffer(GL_NONE);
+                  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            }
             
-            glBindTexture(GL_TEXTURE_2D, shadow_map_T);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-            float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
-            // attach depth texture as FBO's depth buffer
-            glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_FBO);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadow_map_T, 0);
-            glDrawBuffer(GL_NONE);
-            glReadBuffer(GL_NONE);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            //skybox
+            
+            
       }
 
       void Paint() override
       {
+            m_shaders.UpdatePrograms();
+
 
             glClearColor(100.0f / 255.0f, 149.0f / 255.0f, 237.0f / 255.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            
-            m_shaders.UpdatePrograms();
 
             glEnable(GL_CULL_FACE);      
             glCullFace(GL_BACK);
@@ -214,15 +203,13 @@ public:
                                                 92.0f + intensity) / 100.0f;
 
             //render shadow
+            //set state
             glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_FBO);
             glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
             glEnable(GL_DEPTH_TEST);     
             glClear(GL_DEPTH_BUFFER_BIT);
-
             glUseProgram(*m_shadow_map_SP);
             
-
-
             for(uint32_t instance_ID : m_scene->instances)
             {
                   const Instance* instance = &m_scene->instances[instance_ID];
@@ -254,6 +241,7 @@ public:
                   }                  
                   glBindVertexArray(0);
             }
+            //reset state
             glUseProgram(0);
             glDisable(GL_DEPTH_TEST); 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -261,17 +249,18 @@ public:
 
 
             //render scene
+            //set state
             glBindFramebuffer(GL_FRAMEBUFFER, back_buffer_multi_samp_FBO);
             glEnable(GL_DEPTH_TEST);
             glDepthMask(GL_TRUE);
             glDepthFunc(GL_LESS);
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-            
+            glClearColor(dir_light_col.x, dir_light_col.y, dir_light_col.z, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);            
             glUseProgram(*m_scene_SP);
             glUniform3fv(SCENE_CAMERAPOS_UNIFORM_LOCATION, 1, glm::value_ptr(cam->translation));
             glEnable(GL_DEPTH_TEST);
             glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+            
             for(uint32_t instance_ID : m_scene->instances)
             {
                   const Instance* instance = &m_scene->instances[instance_ID];
@@ -335,6 +324,7 @@ public:
                   glBindVertexArray(0);
             }
 
+            //reset state
             glBindFramebuffer(GL_READ_FRAMEBUFFER, back_buffer_multi_samp_FBO);
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, back_buffer_single_samp_FBO);
 
@@ -344,20 +334,17 @@ public:
                               GL_NEAREST);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
+
+            //set state
+            glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
             glDisable(GL_DEPTH_TEST);
             glDisable(GL_CULL_FACE);
             glDepthMask(GL_FALSE);
-
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
-
             glUseProgram(*m_blit_texture_SP);
-
             glActiveTexture(GL_TEXTURE0 + BLIT_TEXTURE_TEXURE_BINDING);
             glBindTexture(GL_TEXTURE_2D, back_buffer_single_samp_CT);
-
             glBindVertexArray(m_null_vao);
             glDrawArrays(GL_TRIANGLES, 0, 3);
 

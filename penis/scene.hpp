@@ -8,8 +8,10 @@
 
 #include "packed_freelist.h"
 #include "camera.hpp"
+#include "skybox.hpp"
 
 #include <vector>
+#include <span>
 #include <string>
 #include <map>
 
@@ -74,6 +76,7 @@ public:
       packed_freelist<Transform> transforms;
       packed_freelist<Instance> instances;
       packed_freelist<Camera> cameras;
+      packed_freelist<Skybox> skyboxes;
 
       uint32_t main_camera_ID;
 
@@ -83,6 +86,8 @@ public:
 void LoadMeshes(Scene& scene,
                 const std::string& filename,
                 std::vector<uint32_t>* load_mesh_IDs);
+
+void AddSkybox(Scene& scene, uint32_t* new_skybox_ID);
 
 void AddInstance(Scene& scene,
                  uint32_t mesh_ID,
