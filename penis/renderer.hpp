@@ -10,9 +10,6 @@ public:
       virtual void Paint() = 0;
 
       virtual void DrawDebugQuad() = 0;
-      
-      // virtual int GetRenderWidth() const = 0;
-      // virtual int GetRenderHeight() const = 0;
 };
 
 IRenderer* NewRenderer();

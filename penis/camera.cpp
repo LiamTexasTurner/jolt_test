@@ -29,7 +29,7 @@ Camera::Camera(glm::vec3 in_translation,
 }
 glm::mat4 Camera::GetViewMatrix()
 {
-      return glm::lookAt(translation, translation + front, up);
+      return glm::lookAt(translation, translation + front, up);      
 }
 
 glm::mat4 Camera::GetWorldMat()

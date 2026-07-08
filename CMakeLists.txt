@@ -11,6 +11,7 @@ add_executable(SceneRenderer
 
   penis/scene.cpp
   penis/renderer.cpp
+  penis/PRenderer.cpp
   penis/game_mode.cpp
   penis/shaderset.cpp
   penis/camera.cpp
