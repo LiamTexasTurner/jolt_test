@@ -36,7 +36,7 @@ public:
 
       GLuint shadow_map_FBO;
       GLuint shadow_map_T;
-      const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+      const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
       bool render_shadow_map = false;
 
       GLuint m_null_vao;
@@ -74,8 +74,10 @@ public:
             glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+            float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
             // attach depth texture as FBO's depth buffer
             glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_FBO);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadow_map_T, 0);
@@ -92,6 +94,10 @@ public:
             
             m_shaders.UpdatePrograms();
 
+            glEnable(GL_CULL_FACE);      
+            glCullFace(GL_BACK);
+            glFrontFace(GL_CCW);
+
 
 
             glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 300.0f);
@@ -100,7 +106,7 @@ public:
 
             glm::mat4 VP = projection * cam->GetViewMatrix();
 
-            float near_plane = 1.0f, far_plane = 7.5f;
+            float near_plane = -10.0f, far_plane = 7.5f;
             glm::vec3 light_pos = glm::vec3(-2.0f, 5.0f, -1.0f);
             glm::mat4 light_projection = glm::ortho(-10.f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);            
             glm::mat4 light_view = glm::lookAt(light_pos, glm::vec3(0.0f), glm::vec3(0,1,0));
@@ -112,6 +118,8 @@ public:
             glEnable(GL_DEPTH_TEST);     
             glClear(GL_DEPTH_BUFFER_BIT);            
             glUseProgram(*m_shadow_map_SP);
+
+
             for(uint32_t instance_ID : m_scene->instances)
             {
                   const Instance* instance = &m_scene->instances[instance_ID];
@@ -145,7 +153,9 @@ public:
             }
             glUseProgram(0);
             glDisable(GL_DEPTH_TEST);
+
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 
 
             //render scene
@@ -219,6 +229,7 @@ public:
       
             if(render_shadow_map)
             {
+                  glDisable(GL_CULL_FACE);
                   glViewport(0,0,SCR_WIDTH, SCR_HEIGHT);
                   glUseProgram(*m_debug_depth_map_SP);
                   glBindVertexArray(m_null_vao);

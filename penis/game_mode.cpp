@@ -59,7 +59,7 @@ public:
             }
 
             loaded_mesh_IDs.clear();
-            LoadMeshes(*m_scene, "../resources/level/movement_level.gltf", &loaded_mesh_IDs);
+            LoadMeshes(*m_scene, "../resources/level/level_big.gltf", &loaded_mesh_IDs);
             for(uint32_t loaded_mesh_ID : loaded_mesh_IDs)
             {
                   uint32_t new_instance_ID;
