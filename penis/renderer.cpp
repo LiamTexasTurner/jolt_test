@@ -249,13 +249,36 @@ public:
 
 
             //render scene
-            //set state
             glBindFramebuffer(GL_FRAMEBUFFER, back_buffer_multi_samp_FBO);
+            glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+            //set state for skybox (skybox section)
+            glEnable(GL_DEPTH_TEST);
+            glDepthMask(GL_TRUE);
+            glDepthFunc(GL_LEQUAL);
+
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+            glUseProgram(*m_skybox_SP);
+            glm::mat4 skybox_view = glm::mat4(glm::mat3(cam->GetViewMatrix()));
+            glUniformMatrix4fv(SKYBOX_PROJECTION_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
+            glUniformMatrix4fv(SKYBOX_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(skybox_view));
+            Skybox* skybox = &m_scene->skyboxes[0];
+            glBindVertexArray(skybox->skyboxVAO);
+            glActiveTexture(GL_TEXTURE0 + SKYBOX_TEXTURE_BINDING);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, skybox->cube_map_texture);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            
+            glBindVertexArray(0);
+            glDepthFunc(GL_LESS);
+            
+            //set state
             glEnable(GL_DEPTH_TEST);
             glDepthMask(GL_TRUE);
             glDepthFunc(GL_LESS);
-            glClearColor(dir_light_col.x, dir_light_col.y, dir_light_col.z, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);            
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
             glUseProgram(*m_scene_SP);
             glUniform3fv(SCENE_CAMERAPOS_UNIFORM_LOCATION, 1, glm::value_ptr(cam->translation));
             glEnable(GL_DEPTH_TEST);
