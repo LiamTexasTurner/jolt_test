@@ -106,8 +106,8 @@ public:
 
             glm::mat4 VP = projection * cam->GetViewMatrix();
 
-            float near_plane = -1.0f, far_plane = 35.5f;
-            float ortho_size = 13.0f;
+            float near_plane = -1.0f, far_plane = 7.5f;
+            float ortho_size = 20.0f;
             glm::vec3 light_pos = glm::vec3(-2.0f, 10.0f, -1.0f);
             
             glm::mat4 light_projection = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near_plane, far_plane);
