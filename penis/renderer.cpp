@@ -20,7 +20,6 @@ public:
       
       Shader unlit;
 
-
       ShaderSet m_shaders;
       GLuint* m_scene_SP;
       GLuint* m_shadow_map_SP;
