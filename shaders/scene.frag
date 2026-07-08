@@ -23,52 +23,86 @@ out vec4 FragColor;
 
 float shadowCalculation(vec4 fragPosLightSpace)
 {
-  // perform perspective divide
-  vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-  // transform to [0,1] range
-  projCoords = projCoords * 0.5 + 0.5;
-  // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-  float closestDepth = texture(shadowMap, projCoords.xy).r; 
-  // get depth of current fragment from light's perspective
-  float currentDepth = projCoords.z;
-  // calculate bias (based on depth map resolution and slope)
-  vec3 normal = normalize(fWorldNormal);
-  vec3 lightDir = normalize(lightPos - fFragPos);
-  float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-  // float bias = 0;
-  // check whether current frag pos is in shadow
-  // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
-  // PCF
-  float shadow = 0.0;
-  vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-  for(int x = -1; x <= 1; ++x)
-    {
-      for(int y = -1; y <= 1; ++y)
-        {
-          float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-          shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;        
-        }    
-    }
-  shadow /= 9.0;
-    
-  // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
-  if(projCoords.z > 1.0)
-    shadow = 0.0;
-        
-  return shadow;
+      vec3 projCoords =
+            fragPosLightSpace.xyz / fragPosLightSpace.w;
+
+      projCoords =
+            projCoords * 0.5 + 0.5;
+
+      if(projCoords.x < 0.0 || projCoords.x > 1.0 ||
+         projCoords.y < 0.0 || projCoords.y > 1.0 ||
+         projCoords.z < 0.0 || projCoords.z > 1.0)
+      {
+            return 0.0;
+      }
+
+      float currentDepth =
+            projCoords.z;
+
+      vec2 texelSize =
+            1.0 / vec2(textureSize(shadowMap, 0));
+
+      float shadow = 0.0;
+
+      for(int x = -1; x <= 1; x++)
+      {
+            for(int y = -1; y <= 1; y++)
+            {
+                  vec2 sampleCoords =
+                        projCoords.xy +
+                        vec2(x, y) * texelSize;
+
+                  float closestDepth =
+                        texture(shadowMap, sampleCoords).r;
+
+                  shadow +=
+                        currentDepth > closestDepth
+                        ? 1.0
+                        : 0.0;
+            }
+      }
+
+      return shadow / 9.0;
 }
 
 void main()
 {
+      vec3 color;
 
-  vec3 color = texture(DiffuseMap, fTexCoord).rgb;
+      if(HasDiffuseMap != 0)
+      {
+            color =
+                  texture(DiffuseMap, fTexCoord).rgb;
+      }
+      else
+      {
+            color =
+                  vec3(1.0);
+      }
 
-  //ambient 
-  vec3 ambient = 0.3 * vec3(1,1,1);
-    
-  float shadow = shadowCalculation(fFragPosLightSpace);
+      vec3 normal =
+            normalize(fWorldNormal);
 
-  color = (ambient + (1.0 - shadow)) * color;
-    
-  FragColor = vec4(color, 1.0);
+      vec3 toLight =
+            normalize(lightPos - fFragPos);
+
+      float diffuseFactor =
+            max(dot(normal, toLight), 0.0);
+
+      float shadow =
+            shadowCalculation(fFragPosLightSpace);
+
+      vec3 ambient =
+            0.3 * color;
+
+      vec3 diffuse =
+            diffuseFactor *
+            (1.0 - shadow) *
+            color;
+
+      vec3 finalColor =
+            ambient + diffuse;
+
+      FragColor =
+        vec4(color * (1 - shadow), 1.0);
 }

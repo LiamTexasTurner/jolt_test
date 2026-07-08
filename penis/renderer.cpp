@@ -36,7 +36,7 @@ public:
 
       GLuint shadow_map_FBO;
       GLuint shadow_map_T;
-      const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
+      const unsigned int SHADOW_WIDTH = 4096 * 4, SHADOW_HEIGHT = 4096 * 4;
       bool render_shadow_map = false;
 
       GLuint m_null_vao;
@@ -106,18 +106,24 @@ public:
 
             glm::mat4 VP = projection * cam->GetViewMatrix();
 
-            float near_plane = -10.0f, far_plane = 7.5f;
-            glm::vec3 light_pos = glm::vec3(-2.0f, 5.0f, -1.0f);
-            glm::mat4 light_projection = glm::ortho(-10.f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);            
-            glm::mat4 light_view = glm::lookAt(light_pos, glm::vec3(0.0f), glm::vec3(0,1,0));
+            float near_plane = -1.0f, far_plane = 35.5f;
+            float ortho_size = 13.0f;
+            glm::vec3 light_pos = glm::vec3(-2.0f, 10.0f, -1.0f);
+            
+            glm::mat4 light_projection = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near_plane, far_plane);
+            glm::mat4 light_view = glm::lookAt(glm::vec3(-2.0f, 5.0f, 0.0f), 
+                                                     glm::vec3(0.0f), 
+                                                     glm::vec3( 0.0f, 1.0f,  0.0f));
             glm::mat4 light_space_matrix = light_projection * light_view;
 
             //render shadow
             glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_FBO);
             glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
             glEnable(GL_DEPTH_TEST);     
-            glClear(GL_DEPTH_BUFFER_BIT);            
+            glClear(GL_DEPTH_BUFFER_BIT);
+
             glUseProgram(*m_shadow_map_SP);
+            
 
 
             for(uint32_t instance_ID : m_scene->instances)
@@ -153,7 +159,10 @@ public:
             }
             glUseProgram(0);
             glDisable(GL_DEPTH_TEST);
-
+            
+            
+            
+            
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
