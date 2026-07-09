@@ -157,7 +157,7 @@ void PRenderer::Paint()
 
 
       CreateDrawList();
-
+      
       DrawShadowMap(light_space_matrix);
 
       DrawSkybox(projection, view);
@@ -237,6 +237,13 @@ void PRenderer::DrawShadowMap(const glm::mat4& light_space_matrix)
                   for(size_t mesh_draw_index = 0; mesh_draw_index < mesh->draw_commands.size(); mesh_draw_index++)
                   {
                         const GLDrawElementsIndirectCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index].gl_draw_ele_cmd;
+
+                        const Material* material = &m_scene->materials[mesh->material_IDs[mesh_draw_index]];
+      
+                        glActiveTexture(GL_TEXTURE0 + SHADOW_DIFFUSE_MAP_TEXTURE_BINDING);
+                        const DiffuseMap* diffuse_map = &m_scene->diffuse_maps[material->diffuse_map_ID];
+                        glBindTexture(GL_TEXTURE_2D, diffuse_map->DiffuseMapTO);
+                        
                         glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES,
                                                                       draw_cmd->count,
                                                                       GL_UNSIGNED_INT,
