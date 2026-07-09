@@ -50,6 +50,7 @@ public:
       void Resize(int width, int height) override;
       void Paint() override;
 
+
       std::vector<uint32_t> opaque_draw_list;
       std::vector<uint32_t> transparent_draw_list;
       void CreateDrawList();
@@ -74,7 +75,5 @@ public:
 
       
       void ResetRenderState();
-
-      
 
 };

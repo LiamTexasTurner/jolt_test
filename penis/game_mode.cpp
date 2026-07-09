@@ -75,10 +75,19 @@ public:
             LoadMeshes(*m_scene, "../resources/follige/fern.gltf", &loaded_mesh_IDs);
             for(uint32_t loaded_mesh_ID : loaded_mesh_IDs)
             {
-                  uint32_t new_instance_ID;
-                  AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
-                  uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-                  scene->transforms[new_instance_ID].translation = glm::vec3(0,0.2,-0.2);
+                  
+                  {
+                        uint32_t new_instance_ID;
+                        AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
+                        uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
+                        scene->transforms[new_instance_ID].translation = glm::vec3(0,0.2,-0.2);
+                  }
+                  {
+                        uint32_t new_instance_ID;
+                        AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
+                        uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
+                        scene->transforms[new_instance_ID].translation = glm::vec3(0,0.2,1.2);
+                  }
             }
 
             
