@@ -21,6 +21,7 @@ public:
       GLuint* m_debug_depth_map_SP;
       GLuint* m_blit_texture_SP;
       GLuint* m_blit_test_SP;
+      GLuint* m_PP_invert_color;
 
       unsigned int SCR_WIDTH;
       unsigned int SCR_HEIGHT;
@@ -34,6 +35,10 @@ public:
       GLuint back_buffer_multi_samp_CT;
       GLuint back_buffer_multi_samp_DT;
       int MSAA_SAMPLES = 16;
+
+      GLuint post_buffer_FBO;
+      GLuint post_buffer_CT;
+      GLuint post_buffer_DT;
 
       GLuint shadow_map_FBO;
       GLuint shadow_map_T;
@@ -69,7 +74,9 @@ public:
       
       void BlitFrameBuffer(GLuint& read_buffer, GLuint draw_buffer, int width, int height);
 
-      void DrawTextureToQuad(GLuint& texture, int pos_x, int pos_y, int width, int height);
+      void PostProcess(GLuint& texture, GLuint* shader, int pos_x, int pos_y, int width, int height);
+
+      void DrawTextureToQuad(GLuint& texture, GLuint* shader, int pos_x, int pos_y, int width, int height);
 
       void DebugShadowMap(GLuint& shadow_map, int pos_x, int pos_y, int width, int height, float near_plane, float far_plane);
 

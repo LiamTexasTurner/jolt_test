@@ -38,6 +38,8 @@
 
 #define SKYBOX_TEXTURE_BINDING 0
 
+
+
 // SAT
 #define SAT_WORKGROUP_SIZE_X 1024
 

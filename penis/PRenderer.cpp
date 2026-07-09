@@ -28,6 +28,7 @@ void PRenderer::Init(Scene* scene)
       m_debug_depth_map_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/debug_depth_map.frag"});
       m_blit_texture_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_texture.frag"});
       m_blit_test_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_test.frag"});
+      m_PP_invert_color = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_invert_color.frag"});
 
       glGenVertexArrays(1, &m_null_vao);
       glBindVertexArray(m_null_vao);
@@ -119,6 +120,42 @@ void PRenderer::Resize(int width, int height)
             glReadBuffer(GL_NONE);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
       }
+
+      //post process
+      {
+
+            glDeleteTextures(1, &post_buffer_CT);
+            glGenTextures(1, &post_buffer_CT);
+            glBindTexture(GL_TEXTURE_2D, post_buffer_CT);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            glDeleteTextures(1, &post_buffer_DT);
+            glGenTextures(1, &post_buffer_DT);
+            glBindTexture(GL_TEXTURE_2D, post_buffer_DT);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+
+
+            glDeleteFramebuffers(1, &post_buffer_FBO);
+            glGenFramebuffers(1, &post_buffer_FBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, post_buffer_FBO);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D, post_buffer_CT, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, post_buffer_DT, 0);
+
+            GLenum single_samp_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if(single_samp_status != GL_FRAMEBUFFER_COMPLETE)
+            {
+                  std::cout << "check fbo single " << std::endl;
+            }
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      }
             
             
 }
@@ -168,7 +205,11 @@ void PRenderer::Paint()
 
       BlitFrameBuffer(back_buffer_multi_samp_FBO, back_buffer_single_samp_FBO, SCR_WIDTH, SCR_HEIGHT);
 
-      DrawTextureToQuad(back_buffer_single_samp_CT, 0, 0, SCR_WIDTH, SCR_HEIGHT);
+      PostProcess(back_buffer_single_samp_CT, m_PP_invert_color, 0, 0, SCR_WIDTH, SCR_HEIGHT);                  
+
+      DrawTextureToQuad(post_buffer_CT, m_blit_texture_SP, 0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+      
       
       if(render_shadow_map)
       {
@@ -482,14 +523,36 @@ void PRenderer::BlitFrameBuffer(GLuint& read_buffer, GLuint draw_buffer, int wid
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void PRenderer::DrawTextureToQuad(GLuint& texture, int pos_x, int pos_y, int width, int height)
+void PRenderer::PostProcess(GLuint& texture, GLuint* shader, int pos_x, int pos_y, int width, int height)
 {
+      glBindFramebuffer(GL_FRAMEBUFFER, post_buffer_FBO);
+      glViewport(pos_x, pos_y, width, height);
+      
+      glDisable(GL_DEPTH_TEST);
+      glDisable(GL_CULL_FACE);
+      glDepthMask(GL_FALSE);
+      glClear(GL_COLOR_BUFFER_BIT);
+      
+      glUseProgram(*shader);
+      
+      glActiveTexture(GL_TEXTURE0 + BLIT_TEXTURE_TEXURE_BINDING);
+      glBindTexture(GL_TEXTURE_2D, texture);
+      
+      glBindVertexArray(m_null_vao);
+      glDrawArrays(GL_TRIANGLES, 0, 3);
+      
+      ResetRenderState();      
+}
+
+void PRenderer::DrawTextureToQuad(GLuint& texture, GLuint* shader, int pos_x, int pos_y, int width, int height)
+{
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
       glViewport(pos_x, pos_y, width, height);
       glDisable(GL_DEPTH_TEST);
       glDisable(GL_CULL_FACE);
       glDepthMask(GL_FALSE);
       glClear(GL_COLOR_BUFFER_BIT);
-      glUseProgram(*m_blit_texture_SP);
+      glUseProgram(*shader);
       glActiveTexture(GL_TEXTURE0 + BLIT_TEXTURE_TEXURE_BINDING);
       glBindTexture(GL_TEXTURE_2D, texture);
       glBindVertexArray(m_null_vao);
