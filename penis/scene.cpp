@@ -76,6 +76,16 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
             {
                   cgltf_texture_view* base_color = &mat->pbr_metallic_roughness.base_color_texture;
 
+                  if(base_color->has_transform)
+                  {
+                        new_material.scale = glm::vec2(base_color->transform.scale[0],
+                                                       base_color->transform.scale[1]);
+                        
+                        new_material.offset = glm::vec2(base_color->transform.offset[0],
+                                                        base_color->transform.offset[1]);
+                        
+                  }
+
                   if(base_color->texture)
                   {
                         cgltf_texture* tex = base_color->texture;

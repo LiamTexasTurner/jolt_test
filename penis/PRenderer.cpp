@@ -344,6 +344,10 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
                   const GLDrawElementsIndirectCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index].gl_draw_ele_cmd;
                   const Material* material = &m_scene->materials[mesh->material_IDs[mesh_draw_index]];
 
+                  
+                  glUniform2fv(SCENE_TEXCOORD_SCALE, 1, value_ptr(material->scale));
+                  glUniform2fv(SCENE_TEXCOORD_OFFSET, 1, value_ptr(material->offset));
+
                   glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
                   if(material->diffuse_map_ID == -1)
                   {

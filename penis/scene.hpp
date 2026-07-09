@@ -25,12 +25,15 @@ struct Material
 {
       std::string name;
 
+      glm::vec2 scale = glm::vec2(1.0f);
+      glm::vec2 offset = glm::vec2(0.0f);
+      
+
       GLuint albedo;
       GLuint normal;
       GLuint ORM;
       
       float base_color[4];
-
       
       uint32_t diffuse_map_ID;
       uint32_t normal_map_ID;
