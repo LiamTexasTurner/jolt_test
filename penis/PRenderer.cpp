@@ -203,11 +203,12 @@ void PRenderer::Paint()
       DrawTransparent(projection, view, light_space_matrix, light_pos, dir_light_col);
 
       BlitFrameBuffer(back_buffer_multi_samp_FBO, back_buffer_single_samp_FBO, SCR_WIDTH, SCR_HEIGHT);
-
+      
       PostProcess(back_buffer_single_samp_CT, m_PP_crt, 0, 0, SCR_WIDTH, SCR_HEIGHT);                  
 
       DrawTextureToQuad(post_buffer_CT, m_blit_texture_SP, 0, 0, SCR_WIDTH, SCR_HEIGHT);
-
+      
+      // DrawTextureToQuad(back_buffer_single_samp_CT, m_blit_texture_SP, 0, 0, SCR_WIDTH, SCR_HEIGHT);
       
       
       if(render_shadow_map)
