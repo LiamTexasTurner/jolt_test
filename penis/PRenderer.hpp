@@ -22,6 +22,7 @@ public:
       GLuint* m_blit_texture_SP;
       GLuint* m_blit_test_SP;
       GLuint* m_PP_invert_color;
+      GLuint* m_PP_crt;
 
       unsigned int SCR_WIDTH;
       unsigned int SCR_HEIGHT;

@@ -29,6 +29,7 @@ void PRenderer::Init(Scene* scene)
       m_blit_texture_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_texture.frag"});
       m_blit_test_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_test.frag"});
       m_PP_invert_color = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_invert_color.frag"});
+      m_PP_crt = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_crt.frag"});
 
       glGenVertexArrays(1, &m_null_vao);
       glBindVertexArray(m_null_vao);
@@ -168,8 +169,6 @@ void PRenderer::Paint()
       glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-
       glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 300.0f);
 
       Camera* cam = &m_scene->cameras[m_scene->main_camera_ID];
@@ -205,7 +204,7 @@ void PRenderer::Paint()
 
       BlitFrameBuffer(back_buffer_multi_samp_FBO, back_buffer_single_samp_FBO, SCR_WIDTH, SCR_HEIGHT);
 
-      PostProcess(back_buffer_single_samp_CT, m_PP_invert_color, 0, 0, SCR_WIDTH, SCR_HEIGHT);                  
+      PostProcess(back_buffer_single_samp_CT, m_PP_crt, 0, 0, SCR_WIDTH, SCR_HEIGHT);                  
 
       DrawTextureToQuad(post_buffer_CT, m_blit_texture_SP, 0, 0, SCR_WIDTH, SCR_HEIGHT);
 
@@ -534,8 +533,9 @@ void PRenderer::PostProcess(GLuint& texture, GLuint* shader, int pos_x, int pos_
       glClear(GL_COLOR_BUFFER_BIT);
       
       glUseProgram(*shader);
+      glUniform1f(POST_PROCESS_ITIME_UNIFORM_LOCATION, glfwGetTime());
       
-      glActiveTexture(GL_TEXTURE0 + BLIT_TEXTURE_TEXURE_BINDING);
+      glActiveTexture(GL_TEXTURE0 + POST_PROCESS_TEXTURE_BINDING);
       glBindTexture(GL_TEXTURE_2D, texture);
       
       glBindVertexArray(m_null_vao);

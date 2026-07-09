@@ -37,28 +37,28 @@ public:
 
             vector<uint32_t> loaded_mesh_IDs;
 
-            // loaded_mesh_IDs.clear();
-            // LoadMeshes(*m_scene, "../resources/chips_2/chips_2.gltf", &loaded_mesh_IDs);
-            // for(uint32_t loaded_mesh_ID : loaded_mesh_IDs)
-            // {
-            //       {
-            //             uint32_t new_instance_ID;
-            //             AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
-            //             uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-            //             scene->transforms[new_instance_ID].translation = glm::vec3(0,-0.1,0);
-            //             scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
-            //             entities.emplace_back(Entity(new_instance_ID));
-            //       }
-            //       {
-            //             uint32_t new_instance_ID;
-            //             AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
-            //             uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-            //             scene->transforms[new_instance_ID].translation = glm::vec3(2,-0.1,0);
-            //             scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
-            //             entities.emplace_back(Entity(new_instance_ID));
-            //       }
+            loaded_mesh_IDs.clear();
+            LoadMeshes(*m_scene, "../resources/chips_2/chips_2.gltf", &loaded_mesh_IDs);
+            for(uint32_t loaded_mesh_ID : loaded_mesh_IDs)
+            {
+                  {
+                        uint32_t new_instance_ID;
+                        AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
+                        uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
+                        scene->transforms[new_instance_ID].translation = glm::vec3(0,-0.1,0);
+                        scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
+                        entities.emplace_back(Entity(new_instance_ID));
+                  }
+                  {
+                        uint32_t new_instance_ID;
+                        AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
+                        uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
+                        scene->transforms[new_instance_ID].translation = glm::vec3(2,-0.1,0);
+                        scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
+                        entities.emplace_back(Entity(new_instance_ID));
+                  }
                   
-            // }
+            }
 
             loaded_mesh_IDs.clear();
             LoadMeshes(*m_scene, "../resources/delta/delta.gltf", &loaded_mesh_IDs);
@@ -71,26 +71,37 @@ public:
                   scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
             }
 
+            loaded_mesh_IDs.clear();
+            LoadMeshes(*m_scene, "../resources/level/level_big.gltf", &loaded_mesh_IDs);
+            for(uint32_t loaded_mesh_ID : loaded_mesh_IDs)
+            {
+                  uint32_t new_instance_ID;
+                  AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
+                  uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
+                  scene->transforms[new_instance_ID].translation = glm::vec3(0,0,0);
+                  scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
+            }
 
-            // loaded_mesh_IDs.clear();
-            // LoadMeshes(*m_scene, "../resources/follige/fern.gltf", &loaded_mesh_IDs);
-            // for(uint32_t loaded_mesh_ID : loaded_mesh_IDs)
-            // {
+
+            loaded_mesh_IDs.clear();
+            LoadMeshes(*m_scene, "../resources/follige/fern.gltf", &loaded_mesh_IDs);
+            for(uint32_t loaded_mesh_ID : loaded_mesh_IDs)
+            {
                   
-            //       {
-            //             uint32_t new_instance_ID;
-            //             AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
-            //             uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-            //             scene->transforms[new_instance_ID].translation = glm::vec3(0,0.2,-0.2);
-            //       }
-            //       {
-            //             uint32_t new_instance_ID;
-            //             AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
-            //             uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-            //             scene->transforms[new_instance_ID].translation = glm::vec3(0,0.2,1.2);
-            //             scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(0,1,0));
-            //       }
-            // }
+                  {
+                        uint32_t new_instance_ID;
+                        AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
+                        uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
+                        scene->transforms[new_instance_ID].translation = glm::vec3(0,0.2,-0.2);
+                  }
+                  {
+                        uint32_t new_instance_ID;
+                        AddInstance(*scene, loaded_mesh_ID, &new_instance_ID);
+                        uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
+                        scene->transforms[new_instance_ID].translation = glm::vec3(0,0.2,1.2);
+                        scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(0,1,0));
+                  }
+            }
 
             
 
