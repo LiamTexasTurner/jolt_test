@@ -3,6 +3,7 @@
 #include "shaderset.h"
 #include "scene.hpp"
 #include "preamble.glsl"
+#include "glm/glm.hpp"
 
 
 class PRenderer : public IRenderer
@@ -48,6 +49,22 @@ public:
       void Init(Scene* scene) override;
       void Resize(int width, int height) override;
       void Paint() override;
+
+      void DrawShadowMap(const glm::mat4& light_space_matrix);
+      void DrawSkybox(const glm::mat4& projection, const glm::mat4& view);
+      void DrawOpaque(const glm::mat4& projection,
+                      const glm::mat4& view,
+                      const glm::mat4& light_space_matrix,
+                      const glm::vec3& light_pos,
+                      const glm::vec3& dir_light_col);
+      
+      void BlitFrameBuffer(GLuint& read_buffer, GLuint draw_buffer, int width, int height);
+
+      void DrawTextureToQuad(GLuint& texture, int pos_x, int pos_y, int width, int height);
+
+      void DebugShadowMap(GLuint& shadow_map, int pos_x, int pos_y, int width, int height, float near_plane, float far_plane);
+
+      
       void ResetRenderState();
 
 };

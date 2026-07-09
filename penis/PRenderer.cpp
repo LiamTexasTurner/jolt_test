@@ -118,8 +118,6 @@ void PRenderer::Resize(int width, int height)
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
       }
             
-      //skybox
-            
             
 }
 
@@ -137,7 +135,7 @@ void PRenderer::Paint()
 
       Camera* cam = &m_scene->cameras[m_scene->main_camera_ID];
 
-      glm::mat4 VP = projection * cam->GetViewMatrix();
+      
 
       float near_plane = -10.0f, far_plane = 20.5f;
       float ortho_size = 20.0f;
@@ -155,8 +153,28 @@ void PRenderer::Paint()
                                           77.0f + intensity,
                                           92.0f + intensity) / 100.0f;
 
-      //render shadow
-      //set state
+
+      DrawShadowMap(light_space_matrix);
+
+      DrawSkybox(projection, cam->GetViewMatrix());
+
+      DrawOpaque(projection, cam->GetViewMatrix(), light_space_matrix, light_pos, dir_light_col);
+
+      BlitFrameBuffer(back_buffer_multi_samp_FBO, back_buffer_single_samp_FBO, SCR_WIDTH, SCR_HEIGHT);
+
+      DrawTextureToQuad(back_buffer_single_samp_CT, 0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+      //Display draw resolve buffer
+      
+      
+      if(render_shadow_map)
+      {
+            DebugShadowMap(shadow_map_T, 0, SCR_HEIGHT - SCR_HEIGHT / 3, SCR_WIDTH / 3, SCR_HEIGHT / 3, near_plane, far_plane);
+      }            
+}
+
+void PRenderer::DrawShadowMap(const glm::mat4& light_space_matrix)
+{
       glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_FBO);
       glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
       glEnable(GL_DEPTH_TEST);     
@@ -195,21 +213,20 @@ void PRenderer::Paint()
                   glBindVertexArray(0);
             }
       ResetRenderState();
+}
 
-
-      //--SCENE---
-            
-      //SkyBox
+void PRenderer::DrawSkybox(const glm::mat4& projection,
+                           const glm::mat4& view)
+{
       glBindFramebuffer(GL_FRAMEBUFFER, back_buffer_multi_samp_FBO);
       glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
       glEnable(GL_DEPTH_TEST);
       glDepthMask(GL_TRUE);
-      glDepthFunc(GL_LEQUAL);
-            
+      glDepthFunc(GL_LEQUAL);      
 
       glUseProgram(*m_skybox_SP);
-      glm::mat4 skybox_view = glm::mat4(glm::mat3(cam->GetViewMatrix()));
+      glm::mat4 skybox_view = glm::mat4(glm::mat3(view));
       glUniformMatrix4fv(SKYBOX_PROJECTION_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
       glUniformMatrix4fv(SKYBOX_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(skybox_view));
       Skybox* skybox = &m_scene->skyboxes[0];
@@ -218,9 +235,14 @@ void PRenderer::Paint()
       glBindTexture(GL_TEXTURE_CUBE_MAP, skybox->cube_map_texture);
       glDrawArrays(GL_TRIANGLES, 0, 36);
       ResetRenderState();
-            
-            
-      //Opaque
+}
+
+void PRenderer::DrawOpaque(const glm::mat4& projection,
+                           const glm::mat4& view,
+                           const glm::mat4& light_space_matrix,
+                           const glm::vec3& light_pos,
+                           const glm::vec3& dir_light_col)
+{
       glBindFramebuffer(GL_FRAMEBUFFER, back_buffer_multi_samp_FBO);
       glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
       glEnable(GL_DEPTH_TEST);
@@ -235,8 +257,10 @@ void PRenderer::Paint()
       glEnable(GL_DEPTH_TEST);
 
       glUseProgram(*m_scene_SP);
-      glUniform3fv(SCENE_CAMERAPOS_UNIFORM_LOCATION, 1, glm::value_ptr(cam->translation));
+      glUniform3fv(SCENE_CAMERAPOS_UNIFORM_LOCATION, 1, glm::value_ptr(view[3]));
       glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+      glm::mat4 VP = projection * view;
             
       for(uint32_t instance_ID : m_scene->instances)
             {
@@ -302,43 +326,47 @@ void PRenderer::Paint()
             }
       ResetRenderState();
 
+}
 
-      //blit MSAA buffer to resolve buffer
-      glBindFramebuffer(GL_READ_FRAMEBUFFER, back_buffer_multi_samp_FBO);
-      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, back_buffer_single_samp_FBO);
+void PRenderer::BlitFrameBuffer(GLuint& read_buffer, GLuint draw_buffer, int width, int height)
+{
+      glBindFramebuffer(GL_READ_FRAMEBUFFER, read_buffer);
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_buffer);
 
-      glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT,
-                        0, 0, SCR_WIDTH, SCR_HEIGHT,
+      glBlitFramebuffer(0, 0, width, height,
+                        0, 0, width, height,
                         GL_COLOR_BUFFER_BIT,
                         GL_NEAREST);
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
-      //Display draw resolve buffer
-      glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+void PRenderer::DrawTextureToQuad(GLuint& texture, int pos_x, int pos_y, int width, int height)
+{
+      glViewport(pos_x, pos_y, width, height);
       glDisable(GL_DEPTH_TEST);
       glDisable(GL_CULL_FACE);
       glDepthMask(GL_FALSE);
       glClear(GL_COLOR_BUFFER_BIT);
       glUseProgram(*m_blit_texture_SP);
       glActiveTexture(GL_TEXTURE0 + BLIT_TEXTURE_TEXURE_BINDING);
-      glBindTexture(GL_TEXTURE_2D, back_buffer_single_samp_CT);
+      glBindTexture(GL_TEXTURE_2D, texture);
       glBindVertexArray(m_null_vao);
       glDrawArrays(GL_TRIANGLES, 0, 3);
+      ResetRenderState();      
+}
+
+void PRenderer::DebugShadowMap(GLuint& shadow_map, int pos_x, int pos_y, int width, int height, float near_plane, float far_plane)
+{
+      glDisable(GL_CULL_FACE);
+      glViewport(pos_x, pos_y, width, height);
+      glUseProgram(*m_debug_depth_map_SP);
+      glBindVertexArray(m_null_vao);
+      glActiveTexture(GL_TEXTURE0 + DEBUG_DEPTH_MAP_TEXURE_BINDING);
+      glBindTexture(GL_TEXTURE_2D, shadow_map);
+      glUniform1f(DEBUG_DEPTH_MAP_NEAR_PLANE, near_plane);
+      glUniform1f(DEBUG_DEPTH_MAP_FAR_PLANE, far_plane);
+      glDrawArrays(GL_TRIANGLES, 0, 3);
       ResetRenderState();
-      
-      if(render_shadow_map)
-      {
-            glDisable(GL_CULL_FACE);
-            glViewport(0,0,SCR_WIDTH, SCR_HEIGHT);
-            glUseProgram(*m_debug_depth_map_SP);
-            glBindVertexArray(m_null_vao);
-            glActiveTexture(GL_TEXTURE0 + DEBUG_DEPTH_MAP_TEXURE_BINDING);
-            glBindTexture(GL_TEXTURE_2D, shadow_map_T);
-            glUniform1f(DEBUG_DEPTH_MAP_NEAR_PLANE, near_plane);
-            glUniform1f(DEBUG_DEPTH_MAP_FAR_PLANE, far_plane);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-            ResetRenderState();
-      }            
 }
 
 
