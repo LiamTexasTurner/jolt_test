@@ -67,6 +67,11 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
             Material new_material;
             new_material.name = mat->name;
 
+            if(string_view("ocean_shore") == string_view(mat->name))
+            {
+                  float x = 0;
+            }
+            DiffuseMap new_diffuse_map;
             if(mat->has_pbr_metallic_roughness)
             {
                   cgltf_texture_view* base_color = &mat->pbr_metallic_roughness.base_color_texture;
@@ -76,8 +81,6 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                         cgltf_texture* tex = base_color->texture;
                         if(tex->image)
                         {
-                              DiffuseMap new_diffuse_map;
-                              
                               cgltf_image* image = tex->image;
                               const char* uri = image->uri;
                               GLuint new_diffuse_map_TO = texture_from_file(uri, directory, false);
@@ -89,17 +92,21 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                                  {
                                        new_diffuse_map.has_transparency = true;
                                        has_transparency = true;
-                                 }
-                              
-
-                              uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(new_diffuse_map);
-
-                              diffuse_map_cache.emplace(mat->name, new_diffuse_map_ID);
-
-                              new_material.diffuse_map_ID = new_diffuse_map_ID;
+                                 }     
+                        }
+                        else
+                        {
+                              new_diffuse_map.DiffuseMapTO = -1;
+                              new_diffuse_map.has_transparency = false;
+                              has_transparency = false;
                         }
                   }
             }
+            uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(new_diffuse_map);
+
+            diffuse_map_cache.emplace(mat->name, new_diffuse_map_ID);
+
+            new_material.diffuse_map_ID = new_diffuse_map_ID;
             uint32_t new_material_id = scene.materials.insert(new_material);
             new_material_IDs.push_back(new_material_id);
       }
@@ -182,14 +189,20 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                         curr_draw_cmd.has_transparecny = has_transparency;
                         mesh_result.draw_commands.push_back(curr_draw_cmd);
 
+                        auto it = diffuse_map_cache.find(primitive->material->name);
+                        if(it != diffuse_map_cache.end())
+                        {
+                              mesh_result.material_IDs.push_back(it->second);
+                        }
+                        else
+                        {
+                              float x = 0;
+                        }
+
                         
                   }
 
-                  auto it = diffuse_map_cache.find(primitive->material->name);
-                  if(it != diffuse_map_cache.end())
-                  {
-                        mesh_result.material_IDs.push_back(it->second);
-                  }
+                  
                   
             }            
             break;
