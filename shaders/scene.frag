@@ -48,6 +48,9 @@ void main()
 {
 
   vec4 color = texture(DiffuseMap, fTexCoord);
+
+  if(color.a < 0.9)
+    discard;
   
   vec3 normal = normalize(fWorldNormal);
 

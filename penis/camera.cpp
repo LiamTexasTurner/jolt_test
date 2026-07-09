@@ -37,7 +37,7 @@ glm::mat4 Camera::GetWorldMat()
       glm::mat4 world_mat = glm::mat4();
       world_mat[0] = glm::vec4(right, 0.0f);
       world_mat[1] = glm::vec4(up, 0.0f);
-      world_mat[2] = glm::vec4(front, 0.0f);
+      world_mat[2] = glm::vec4(-front, 0.0f);
       world_mat[3] = glm::vec4(translation, 1.0f);
       return world_mat;
 }

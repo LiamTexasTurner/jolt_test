@@ -50,6 +50,9 @@ public:
       void Resize(int width, int height) override;
       void Paint() override;
 
+      std::vector<uint32_t> opaque_draw_list;
+      std::vector<uint32_t> transparent_draw_list;
+      void CreateDrawList();
       void DrawShadowMap(const glm::mat4& light_space_matrix);
       void DrawSkybox(const glm::mat4& projection, const glm::mat4& view);
       void DrawOpaque(const glm::mat4& projection,
@@ -57,6 +60,11 @@ public:
                       const glm::mat4& light_space_matrix,
                       const glm::vec3& light_pos,
                       const glm::vec3& dir_light_col);
+      void DrawTransparent(const glm::mat4& projection,
+                           const glm::mat4& view,
+                           const glm::mat4& light_space_matrix,
+                           const glm::vec3& light_pos,
+                           const glm::vec3& dir_light_col);
       
       void BlitFrameBuffer(GLuint& read_buffer, GLuint draw_buffer, int width, int height);
 
@@ -66,5 +74,7 @@ public:
 
       
       void ResetRenderState();
+
+      
 
 };

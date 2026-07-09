@@ -17,7 +17,8 @@
 
 struct DiffuseMap
 {
-      GLuint DiffuseMapTO;
+      GLuint DiffuseMapTO = -1;
+      bool has_transparency = false;
 };
 
 struct Material
@@ -36,6 +37,12 @@ struct Material
       uint32_t orm_map_ID;
 };
 
+struct DrawCommand
+{
+      GLDrawElementsIndirectCommand gl_draw_ele_cmd;
+      bool has_transparecny;
+};
+
 struct Mesh
 {
       std::string Name;
@@ -49,7 +56,7 @@ struct Mesh
       GLuint index_count;
       GLuint vertex_count;
 
-      std::vector<GLDrawElementsIndirectCommand> draw_commands;
+      std::vector<DrawCommand> draw_commands;
       std::vector<uint32_t> material_IDs;
 };
 
@@ -65,6 +72,11 @@ struct Instance
 {
       uint32_t mesh_ID;
       uint32_t transform_ID;
+};
+
+struct Opaque
+{
+      uint32_t instance_id;
 };
 
 class Scene

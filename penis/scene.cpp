@@ -29,13 +29,13 @@ void load_attribute(cgltf_accessor* attribute, int num_comp, vector<T>& dst)
 
 void Scene::Init()
 {
-      diffuse_maps = packed_freelist<DiffuseMap>(512);
-      materials    = packed_freelist<Material>(512);
-      meshes       = packed_freelist<Mesh>(512);
-      transforms   = packed_freelist<Transform>(4096);
-      instances    = packed_freelist<Instance>(4096);
-      cameras      = packed_freelist<Camera>(32);
-      skyboxes     = packed_freelist<Skybox>(32);
+      diffuse_maps  = packed_freelist<DiffuseMap>(512);
+      materials     = packed_freelist<Material>(512);
+      meshes        = packed_freelist<Mesh>(512);
+      transforms    = packed_freelist<Transform>(4096);
+      instances     = packed_freelist<Instance>(4096);
+      cameras       = packed_freelist<Camera>(32);
+      skyboxes      = packed_freelist<Skybox>(32);
 }
 
 void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mesh_IDs)
@@ -58,6 +58,7 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
       //add materials to the scene
       map<string, uint32_t> diffuse_map_cache;
       vector<uint32_t> new_material_IDs;
+      bool has_transparency = false;
       for(int i = 0; i < data->materials_count; i++)
       {
 
@@ -75,13 +76,20 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                         cgltf_texture* tex = base_color->texture;
                         if(tex->image)
                         {
+                              DiffuseMap new_diffuse_map;
+                              
                               cgltf_image* image = tex->image;
                               const char* uri = image->uri;
-      
                               GLuint new_diffuse_map_TO = texture_from_file(uri, directory, false);
-                              
-                              DiffuseMap new_diffuse_map;
                               new_diffuse_map.DiffuseMapTO = new_diffuse_map_TO;
+
+                              if(mat->alpha_mode == cgltf_alpha_mode_blend ||
+                                 mat->alpha_mode == cgltf_alpha_mode_mask  ||
+                                 mat->pbr_metallic_roughness.base_color_factor[3] < 1.0f)
+                                 {
+                                       new_diffuse_map.has_transparency = true;
+                                       has_transparency = true;
+                                 }
                               
 
                               uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(new_diffuse_map);
@@ -100,6 +108,7 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
       vector<float> tex_coords;
       vector<float> normals;
       vector<uint32_t> indices;
+      
 
       for(int i = 0; i < data->nodes_count; i++)
       {
@@ -163,15 +172,17 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                               indices.push_back(base_vertex + local_index);
                         }
 
-                        GLDrawElementsIndirectCommand curr_draw_cmd{};
+                        DrawCommand curr_draw_cmd{};
 
-                        curr_draw_cmd.count = static_cast<GLuint>(index_accessor->count);
-                        curr_draw_cmd.primCount = 1;
-                        curr_draw_cmd.firstIndex = first_index;
-                        curr_draw_cmd.baseVertex = 0;
-                        curr_draw_cmd.baseInstance = 0;
-
+                        curr_draw_cmd.gl_draw_ele_cmd.count = static_cast<GLuint>(index_accessor->count);
+                        curr_draw_cmd.gl_draw_ele_cmd.primCount = 1;
+                        curr_draw_cmd.gl_draw_ele_cmd.firstIndex = first_index;
+                        curr_draw_cmd.gl_draw_ele_cmd.baseVertex = 0;
+                        curr_draw_cmd.gl_draw_ele_cmd.baseInstance = 0;
+                        curr_draw_cmd.has_transparecny = has_transparency;
                         mesh_result.draw_commands.push_back(curr_draw_cmd);
+
+                        
                   }
 
                   auto it = diffuse_map_cache.find(primitive->material->name);
@@ -179,6 +190,7 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                   {
                         mesh_result.material_IDs.push_back(it->second);
                   }
+                  
             }            
             break;
       }
@@ -254,6 +266,8 @@ void AddInstance(Scene &scene, uint32_t mesh_ID, uint32_t *new_instance_ID)
       {
             *new_instance_ID = tmp_new_instance_ID;
       }
+
+      
 };
 
 void AddSkybox(Scene& scene, uint32_t* new_skybox_ID)
