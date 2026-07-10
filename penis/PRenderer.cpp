@@ -233,26 +233,8 @@ unsigned int PRenderer::Paint()
       
       PostProcess(back_buffer_single_samp_CT, m_PP_crt, 0, 0, SCR_WIDTH, SCR_HEIGHT);                  
 
-      // DrawTextureToQuad(post_buffer_CT, m_blit_texture_SP, 0, 0, SCR_WIDTH, SCR_HEIGHT);
+      DrawTextureToQuad(post_buffer_CT, out_buffer_FBO, m_blit_texture_SP, 0, 0, SCR_WIDTH, SCR_HEIGHT);
 
-      glBindFramebuffer(GL_FRAMEBUFFER, out_buffer_FBO);
-      glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-      glDisable(GL_DEPTH_TEST);
-      glDisable(GL_CULL_FACE);
-      glDepthMask(GL_FALSE);
-      glClear(GL_COLOR_BUFFER_BIT);
-      glUseProgram(*m_blit_texture_SP);
-      glActiveTexture(GL_TEXTURE0 + BLIT_TEXTURE_TEXURE_BINDING);
-      glBindTexture(GL_TEXTURE_2D, post_buffer_CT);
-      glBindVertexArray(m_null_vao);
-      glDrawArrays(GL_TRIANGLES, 0, 3);
-      ResetRenderState();
-
-      // DrawTextureToQuad(post_buffer_CT, m_blit_texture_SP, 0, 0, SCR_WIDTH, SCR_HEIGHT);
-      
-      // DrawTextureToQuad(back_buffer_single_samp_CT, m_blit_texture_SP, 0, 0, SCR_WIDTH, SCR_HEIGHT);
-      
-      
       if(render_shadow_map)
       {
             DebugShadowMap(shadow_map_T, 0, SCR_HEIGHT - SCR_HEIGHT / 3, SCR_WIDTH / 3, SCR_HEIGHT / 3, near_plane, far_plane);
@@ -589,9 +571,9 @@ void PRenderer::PostProcess(GLuint& texture, GLuint* shader, int pos_x, int pos_
       ResetRenderState();      
 }
 
-void PRenderer::DrawTextureToQuad(GLuint& texture, GLuint* shader, int pos_x, int pos_y, int width, int height)
+void PRenderer::DrawTextureToQuad(GLuint& texture, GLuint& FBO, GLuint* shader, int pos_x, int pos_y, int width, int height)
 {
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      glBindFramebuffer(GL_FRAMEBUFFER, FBO);
       glViewport(pos_x, pos_y, width, height);
       glDisable(GL_DEPTH_TEST);
       glDisable(GL_CULL_FACE);
@@ -607,6 +589,7 @@ void PRenderer::DrawTextureToQuad(GLuint& texture, GLuint* shader, int pos_x, in
 
 void PRenderer::DebugShadowMap(GLuint& shadow_map, int pos_x, int pos_y, int width, int height, float near_plane, float far_plane)
 {
+      glBindFramebuffer(GL_FRAMEBUFFER, out_buffer_FBO);
       glDisable(GL_CULL_FACE);
       glViewport(pos_x, pos_y, width, height);
       glUseProgram(*m_debug_depth_map_SP);

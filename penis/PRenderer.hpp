@@ -80,7 +80,7 @@ public:
 
       void PostProcess(GLuint& texture, GLuint* shader, int pos_x, int pos_y, int width, int height);
 
-      void DrawTextureToQuad(GLuint& texture, GLuint* shader, int pos_x, int pos_y, int width, int height);
+      void DrawTextureToQuad(GLuint& texture, GLuint& FBO, GLuint* shader, int pos_x, int pos_y, int width, int height);
 
       void BlitToOutBuffer(GLuint& texture, GLuint* shader, int pos_x, int pos_y, int width, int height);
 
