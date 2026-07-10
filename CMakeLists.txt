@@ -34,6 +34,7 @@ target_include_directories(SceneRenderer PRIVATE
 )
 
 target_link_directories(SceneRenderer PRIVATE
+  dwmapi
   include/GLFW
   c:/imgui
   c:/imgui/backends
@@ -43,9 +44,10 @@ target_link_libraries(SceneRenderer PRIVATE
   glfw3
   opengl32
   gdi32
+  dwmapi
 )
 
 target_compile_definitions(SceneRenderer PRIVATE
   GLM_FORCE_CTOR_INIT
-  )
+)
   

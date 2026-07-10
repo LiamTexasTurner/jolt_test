@@ -125,13 +125,17 @@ public:
             KeyInputs& key_inputs = player_input.key_inputs;
             MouseData& mouse_data = player_input.mouse_data;
 
-            Camera& main_camera = m_scene->cameras[m_scene->main_camera_ID];
-            main_camera.UpdateFromInput(player_input, dt);
-                  
-            if(key_inputs.space.pressed)
+            if(!gd->cursor_enabled)
             {
-                  RemoveInstance(*m_scene, entities.back().instance_ID);      
+                  Camera& main_camera = m_scene->cameras[m_scene->main_camera_ID];
+                  main_camera.UpdateFromInput(player_input, dt);
+                  
+                  if(key_inputs.space.pressed)
+                  {
+                        RemoveInstance(*m_scene, entities.back().instance_ID);      
+                  }
             }
+            
             if(key_inputs.tab.pressed)
             {
                   m_renderer->DrawDebugQuad();

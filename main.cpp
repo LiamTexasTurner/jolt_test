@@ -1,5 +1,12 @@
-﻿#include <glad/glad.h>
+﻿#include <Windows.h>
+#include <dwmapi.h>
+
+#include <glad/glad.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
+
+#include <stb_image.h>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -41,7 +48,10 @@ int main()
       glfwInit();
       glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4.3);
       glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-      glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);     
+      glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+
+      
 
       GLFWmonitor* monitor = nullptr;
       const GLFWvidmode* mode = nullptr;
@@ -54,11 +64,44 @@ int main()
             mode = glfwGetVideoMode(monitor);
             SCR_WIDTH = mode->width;
             SCR_HEIGHT = mode->height;
-            window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", monitor, NULL);
+            window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Penis", monitor, NULL);
       }
       else
       {
-            window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", monitor, NULL);
+            window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Penis", monitor, NULL);
+      }
+
+      HWND hwnd = glfwGetWin32Window(window);
+
+      // COLORREF is 0x00BBGGRR, not RGB order.
+      COLORREF titleBarColor = RGB(25, 25, 25);
+
+      DwmSetWindowAttribute(hwnd,
+                            DWMWA_CAPTION_COLOR,
+                            &titleBarColor,
+                            sizeof(titleBarColor)
+                            );
+      int width = 0;
+      int height = 0;
+      int channels = 0;
+
+      unsigned char* pixels = stbi_load("../resources/manray/manray_headset_small.png",
+                                        &width,
+                                        &height,
+                                        &channels,
+                                        4
+                                        );
+
+      if (pixels)
+      {
+            GLFWimage icon;
+            icon.width  = width;
+            icon.height = height;
+            icon.pixels = pixels;
+
+            glfwSetWindowIcon(window, 1, &icon);
+
+            stbi_image_free(pixels);
       }
             
       
@@ -153,9 +196,7 @@ int main()
                   PREV_SCR_WIDTH = SCR_WIDTH;
                   PREV_SCR_HEIGHT = SCR_HEIGHT;
             }
-            
-            
-
+ 
             unsigned int render_texture = renderer->Paint();
 
             ImGui::Image((ImTextureID)(intptr_t)render_texture,
@@ -163,6 +204,10 @@ int main()
                          ImVec2(0, 1),
                          ImVec2(1, 0));
       
+            ImGui::End();
+
+            ImGui::Begin("Details");
+
             ImGui::End();
 
             
