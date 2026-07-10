@@ -75,7 +75,7 @@ int main()
 
       // COLORREF is 0x00BBGGRR, not RGB order.
       COLORREF titleBarColor = RGB(25, 25, 25);
-
+      
       DwmSetWindowAttribute(hwnd,
                             DWMWA_CAPTION_COLOR,
                             &titleBarColor,

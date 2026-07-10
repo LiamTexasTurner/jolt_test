@@ -30,6 +30,7 @@ void PRenderer::Init(Scene* scene)
       m_blit_test_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_test.frag"});
       m_PP_invert_color = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_invert_color.frag"});
       m_PP_crt = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_crt.frag"});
+      m_PP_clear = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_clear.frag"});
 
       glGenVertexArrays(1, &m_null_vao);
       glBindVertexArray(m_null_vao);
@@ -194,7 +195,7 @@ unsigned int PRenderer::Paint()
       glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
+      glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 3000.0f);
 
       Camera* cam = &m_scene->cameras[m_scene->main_camera_ID];
 
@@ -229,7 +230,7 @@ unsigned int PRenderer::Paint()
 
       BlitFrameBuffer(back_buffer_multi_samp_FBO, back_buffer_single_samp_FBO, SCR_WIDTH, SCR_HEIGHT);
       
-      PostProcess(back_buffer_single_samp_CT, m_PP_crt, 0, 0, SCR_WIDTH, SCR_HEIGHT);                  
+      PostProcess(back_buffer_single_samp_CT, m_PP_clear, 0, 0, SCR_WIDTH, SCR_HEIGHT);
 
       DrawTextureToQuad(post_buffer_CT, out_buffer_FBO, m_blit_texture_SP, 0, 0, SCR_WIDTH, SCR_HEIGHT);
 

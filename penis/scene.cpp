@@ -56,8 +56,7 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
       }
 
       //add materials to the scene
-      map<string, uint32_t> diffuse_map_cache;
-      vector<uint32_t> new_material_IDs;
+      map<string, uint32_t> material_map_cache;
       bool has_transparency = false;
       for(int i = 0; i < data->materials_count; i++)
       {
@@ -114,11 +113,11 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
             }
             uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(new_diffuse_map);
 
-            diffuse_map_cache.emplace(mat->name, new_diffuse_map_ID);
+            
 
             new_material.diffuse_map_ID = new_diffuse_map_ID;
-            uint32_t new_material_id = scene.materials.insert(new_material);
-            new_material_IDs.push_back(new_material_id);
+            uint32_t new_material_ID = scene.materials.insert(new_material);
+            material_map_cache.emplace(mat->name, new_material_ID);
       }
 
       vector<float> positions;
@@ -199,8 +198,8 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                         curr_draw_cmd.has_transparecny = has_transparency;
                         mesh_result.draw_commands.push_back(curr_draw_cmd);
 
-                        auto it = diffuse_map_cache.find(primitive->material->name);
-                        if(it != diffuse_map_cache.end())
+                        auto it = material_map_cache.find(primitive->material->name);
+                        if(it != material_map_cache.end())
                         {
                               mesh_result.material_IDs.push_back(it->second);
                         }
