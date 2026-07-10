@@ -26,6 +26,9 @@ bool full_screen = false;
 unsigned int SCR_WIDTH = 1920;
 unsigned int SCR_HEIGHT = 1080;
 
+unsigned int PREV_SCR_WIDTH = SCR_WIDTH;
+unsigned int PREV_SCR_HEIGHT = SCR_HEIGHT;
+
 
 double last_time = 0.0;
 double accumulator = 0.0;
@@ -70,8 +73,8 @@ int main()
       glfwSetCursorPosCallback(window, mouse_callback);
       glfwSetScrollCallback(window, scroll_wheel_callback);
       glfwSetWindowUserPointer(window, &game_data);
-      // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
+      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+      
       if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
       {
             std::cout << "Failed to initialize GLAD" << std::endl;
@@ -105,7 +108,7 @@ int main()
       IGameMode* game_mode = NewGameMode();
       game_mode->Init(&scene, window, renderer);
       
-
+      
       
       while(!glfwWindowShouldClose(window))
       {
@@ -140,6 +143,18 @@ int main()
             ImGui::End();
                   
             ImGui::Begin("Scene");
+      
+            ImVec2 current_sceen_size = ImGui::GetContentRegionAvail();
+            SCR_WIDTH = (int)current_sceen_size.x;
+            SCR_HEIGHT = (int)current_sceen_size.y;
+            if(SCR_WIDTH != PREV_SCR_WIDTH || SCR_HEIGHT != PREV_SCR_HEIGHT)
+            {
+                  renderer->Resize(SCR_WIDTH, SCR_HEIGHT);
+                  PREV_SCR_WIDTH = SCR_WIDTH;
+                  PREV_SCR_HEIGHT = SCR_HEIGHT;
+            }
+            
+            
 
             unsigned int render_texture = renderer->Paint();
 
@@ -171,6 +186,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
       GameData* gd = static_cast<GameData*>(glfwGetWindowUserPointer(window));
+      if(gd->cursor_enabled) return;
       MouseData& mouse_data = gd->player_input.mouse_data;
 
       float xpos = static_cast<float>(xposIn);
@@ -200,13 +216,14 @@ void scroll_wheel_callback(GLFWwindow* window, double x_offset, double y_offset)
 
 void process_input(GLFWwindow *window)
 {
+
+      GameData* gd = static_cast<GameData*>(glfwGetWindowUserPointer(window));
+      PlayerInput& player_input = gd->player_input;
+      
       if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS)
       {
             glfwSetWindowShouldClose(window, true);
       }
-
-      GameData* gd = static_cast<GameData*>(glfwGetWindowUserPointer(window));
-      PlayerInput& player_input = gd->player_input;
 
       glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS ? press_key(player_input.key_inputs.W) : release_key(player_input.key_inputs.W);
 
@@ -223,7 +240,7 @@ void process_input(GLFWwindow *window)
       glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS ? press_key(player_input.key_inputs.C) : release_key(player_input.key_inputs.C);
 
       glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS ? press_key(player_input.key_inputs.V) : release_key(player_input.key_inputs.V);
-
+      
       glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS ? press_key(player_input.key_inputs.space) : release_key(player_input.key_inputs.space);
 
       glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS ? press_key(player_input.key_inputs.tab) : release_key(player_input.key_inputs.tab);
@@ -236,7 +253,20 @@ void process_input(GLFWwindow *window)
      
       glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS ? press_key(player_input.key_inputs.lmb) : release_key(player_input.key_inputs.lmb);
 
-      
+      glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS ? press_key(player_input.key_inputs.num_4) : release_key(player_input.key_inputs.num_4);
 
       
+      if(player_input.key_inputs.num_4.pressed)
+      {
+            gd->cursor_enabled = !gd->cursor_enabled;
+            if(gd->cursor_enabled)
+            {
+                  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                  player_input.mouse_data.first_mouse = true;
+            }
+            else
+            {
+                  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);           
+            }            
+      }
 }

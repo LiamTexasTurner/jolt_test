@@ -54,7 +54,7 @@ public:
       GLuint m_null_vao;
 
       void DrawDebugQuad(){render_shadow_map = !render_shadow_map;}
-
+      
       void Init(Scene* scene) override;
       void Resize(int width, int height) override;
       unsigned int Paint() override;

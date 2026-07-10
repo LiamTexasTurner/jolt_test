@@ -40,8 +40,6 @@ void PRenderer::Resize(int width, int height)
 {
       SCR_WIDTH = width;
       SCR_HEIGHT = height;
-
-
       //multi sample
       {
             glDeleteTextures(1, &back_buffer_multi_samp_CT);
@@ -196,7 +194,7 @@ unsigned int PRenderer::Paint()
       glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 300.0f);
+      glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
 
       Camera* cam = &m_scene->cameras[m_scene->main_camera_ID];
 

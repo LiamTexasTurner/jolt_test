@@ -24,6 +24,8 @@ struct KeyInputs
       KeyInput Q;
       KeyInput C;
       KeyInput V;
+
+      KeyInput num_4;
       
 };
 
@@ -66,6 +68,7 @@ inline void release_key(KeyInput &key)
 struct GameData
 {
       PlayerInput player_input;
+      bool cursor_enabled = false;
 };
 
 
