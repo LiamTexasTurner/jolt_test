@@ -1,8 +1,13 @@
 ﻿#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+
 #include <iostream>
 
+#include "penis/imgui_themes.hpp"
 #include "penis/scene.hpp"
 #include "penis/renderer.hpp"
 #include "penis/game_mode.hpp"
@@ -65,7 +70,7 @@ int main()
       glfwSetCursorPosCallback(window, mouse_callback);
       glfwSetScrollCallback(window, scroll_wheel_callback);
       glfwSetWindowUserPointer(window, &game_data);
-      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+      // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
       if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
       {
@@ -74,6 +79,19 @@ int main()
       }
 
       glfwSwapInterval(0);
+
+
+      IMGUI_CHECKVERSION();
+      ImGui::CreateContext();
+      ImGuiIO& io = ImGui::GetIO();
+      io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+      io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+      io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // IF using Docking Branch
+      SetDarkTheme();
+
+      // Setup Platform/Renderer backends
+      ImGui_ImplGlfw_InitForOpenGL(window, true);
+      ImGui_ImplOpenGL3_Init();
       
       Scene scene;
       scene.Init();
@@ -95,17 +113,50 @@ int main()
             delta_time = now - last_time;
             last_time = now;
 
-            // if (delta_time > 0.25)
-            // {
-            //       delta_time = 0.25;
-            // }
-            
             glfwPollEvents();      
             process_input(window);
 
             game_mode->Update(delta_time);
 
-            renderer->Paint();
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+
+            const ImGuiViewport* vp = ImGui::GetMainViewport();
+
+            ImGui::SetNextWindowPos(vp->Pos, ImGuiCond_Always);
+            ImGui::SetNextWindowSize(vp->Size, ImGuiCond_Always);
+            ImGui::SetNextWindowViewport(vp->ID);
+
+            ImGui::Begin("Main", nullptr,
+                         ImGuiWindowFlags_NoDecoration |
+                         ImGuiWindowFlags_NoMove |
+                         ImGuiWindowFlags_NoResize |
+                         ImGuiWindowFlags_NoSavedSettings |
+                         ImGuiWindowFlags_NoBringToFrontOnFocus);
+
+            ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
+            ImGui::DockSpace(dockspace_id, ImVec2(0, 0));                  
+            ImGui::End();
+                  
+            ImGui::Begin("Scene");
+
+            unsigned int render_texture = renderer->Paint();
+
+            ImGui::Image((ImTextureID)(intptr_t)render_texture,
+                         ImVec2((float)SCR_WIDTH, (float)SCR_HEIGHT),
+                         ImVec2(0, 1),
+                         ImVec2(1, 0));
+      
+            ImGui::End();
+
+            
+
+            ImGui::Render();
+            int display_w, display_h;
+            glfwGetFramebufferSize(window, &display_w, &display_h);
+            glViewport(0, 0, display_w, display_h);
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             
             glfwSwapBuffers(window);
       }      

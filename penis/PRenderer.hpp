@@ -41,6 +41,9 @@ public:
       GLuint post_buffer_CT;
       GLuint post_buffer_DT;
 
+      GLuint out_buffer_FBO;
+      GLuint out_buffer_CT;
+
       GLuint shadow_map_FBO;
       GLuint shadow_map_T;
       const unsigned int SHADOW_WIDTH = 4096 * 4, SHADOW_HEIGHT = 4096 * 4;
@@ -54,8 +57,8 @@ public:
 
       void Init(Scene* scene) override;
       void Resize(int width, int height) override;
-      void Paint() override;
-
+      unsigned int Paint() override;
+      
 
       std::vector<uint32_t> opaque_draw_list;
       std::vector<uint32_t> transparent_draw_list;
@@ -78,6 +81,8 @@ public:
       void PostProcess(GLuint& texture, GLuint* shader, int pos_x, int pos_y, int width, int height);
 
       void DrawTextureToQuad(GLuint& texture, GLuint* shader, int pos_x, int pos_y, int width, int height);
+
+      void BlitToOutBuffer(GLuint& texture, GLuint* shader, int pos_x, int pos_y, int width, int height);
 
       void DebugShadowMap(GLuint& shadow_map, int pos_x, int pos_y, int width, int height, float near_plane, float far_plane);
 

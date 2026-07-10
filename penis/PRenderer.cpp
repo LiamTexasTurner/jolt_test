@@ -157,11 +157,38 @@ void PRenderer::Resize(int width, int height)
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
       }
+
+      //out buffer
+      {
+            glDeleteTextures(1, &out_buffer_CT);
+            glGenTextures(1, &out_buffer_CT);
+            glBindTexture(GL_TEXTURE_2D, out_buffer_CT);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+
+            glDeleteFramebuffers(1, &out_buffer_FBO);
+            glGenFramebuffers(1, &out_buffer_FBO);
+            glBindFramebuffer(GL_FRAMEBUFFER, out_buffer_FBO);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D, out_buffer_CT, 0);
+
+            GLenum single_samp_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if(single_samp_status != GL_FRAMEBUFFER_COMPLETE)
+            {
+                  std::cout << "check fbo single " << std::endl;
+            }
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      }
             
             
 }
 
-void PRenderer::Paint() 
+unsigned int PRenderer::Paint() 
 {
       m_shaders.UpdatePrograms();
 
@@ -206,7 +233,22 @@ void PRenderer::Paint()
       
       PostProcess(back_buffer_single_samp_CT, m_PP_crt, 0, 0, SCR_WIDTH, SCR_HEIGHT);                  
 
-      DrawTextureToQuad(post_buffer_CT, m_blit_texture_SP, 0, 0, SCR_WIDTH, SCR_HEIGHT);
+      // DrawTextureToQuad(post_buffer_CT, m_blit_texture_SP, 0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+      glBindFramebuffer(GL_FRAMEBUFFER, out_buffer_FBO);
+      glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+      glDisable(GL_DEPTH_TEST);
+      glDisable(GL_CULL_FACE);
+      glDepthMask(GL_FALSE);
+      glClear(GL_COLOR_BUFFER_BIT);
+      glUseProgram(*m_blit_texture_SP);
+      glActiveTexture(GL_TEXTURE0 + BLIT_TEXTURE_TEXURE_BINDING);
+      glBindTexture(GL_TEXTURE_2D, post_buffer_CT);
+      glBindVertexArray(m_null_vao);
+      glDrawArrays(GL_TRIANGLES, 0, 3);
+      ResetRenderState();
+
+      // DrawTextureToQuad(post_buffer_CT, m_blit_texture_SP, 0, 0, SCR_WIDTH, SCR_HEIGHT);
       
       // DrawTextureToQuad(back_buffer_single_samp_CT, m_blit_texture_SP, 0, 0, SCR_WIDTH, SCR_HEIGHT);
       
@@ -214,7 +256,9 @@ void PRenderer::Paint()
       if(render_shadow_map)
       {
             DebugShadowMap(shadow_map_T, 0, SCR_HEIGHT - SCR_HEIGHT / 3, SCR_WIDTH / 3, SCR_HEIGHT / 3, near_plane, far_plane);
-      }            
+      }
+
+      return out_buffer_CT;
 }
 
 void PRenderer::CreateDrawList()
@@ -558,7 +602,7 @@ void PRenderer::DrawTextureToQuad(GLuint& texture, GLuint* shader, int pos_x, in
       glBindTexture(GL_TEXTURE_2D, texture);
       glBindVertexArray(m_null_vao);
       glDrawArrays(GL_TRIANGLES, 0, 3);
-      ResetRenderState();      
+      ResetRenderState();
 }
 
 void PRenderer::DebugShadowMap(GLuint& shadow_map, int pos_x, int pos_y, int width, int height, float near_plane, float far_plane)

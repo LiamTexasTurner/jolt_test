@@ -18,14 +18,25 @@ add_executable(SceneRenderer
   penis/entity.cpp
   penis/skybox.cpp
 
+  c:/imgui/imgui.cpp
+  c:/imgui/imgui_demo.cpp
+  c:/imgui/imgui_draw.cpp
+  c:/imgui/imgui_tables.cpp
+  c:/imgui/imgui_widgets.cpp
+  c:/imgui/backends/imgui_impl_opengl3.cpp
+  c:/imgui/backends/imgui_impl_glfw.cpp
 )
 
 target_include_directories(SceneRenderer PRIVATE
   include
+  c:/imgui
+  c:/imgui/backends
 )
 
 target_link_directories(SceneRenderer PRIVATE
   include/GLFW
+  c:/imgui
+  c:/imgui/backends
 )
 
 target_link_libraries(SceneRenderer PRIVATE
