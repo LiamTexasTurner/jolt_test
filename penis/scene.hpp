@@ -1,7 +1,9 @@
 #pragma once
 
+
 #include <glad/glad.h>
 #include "opengl.h"
+#include <common.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -14,6 +16,12 @@
 #include <span>
 #include <string>
 #include <map>
+
+struct DrawCommand
+{
+      GLDrawElementsIndirectCommand gl_draw_ele_cmd;
+      bool has_transparecny = false;
+};
 
 struct DiffuseMap
 {
@@ -40,14 +48,10 @@ struct Material
       uint32_t orm_map_ID;
 };
 
-struct DrawCommand
-{
-      GLDrawElementsIndirectCommand gl_draw_ele_cmd;
-      bool has_transparecny;
-};
-
 struct Mesh
 {
+      std::vector<DrawCommand> draw_commands;
+      std::vector<uint32_t> material_IDs;
       std::string Name;
 
       GLuint mesh_VAO;
@@ -58,10 +62,43 @@ struct Mesh
 
       GLuint index_count;
       GLuint vertex_count;
+};
 
+struct BoneInfo
+{
+      char name[32];
+      int parent;
+      int index;
+};
+
+struct Skeleton
+{
+      std::vector<BoneInfo> bone_info;
+      std::vector<glm::mat4> inv_bind_mats;
+      std::string name;
+      GLuint bone_transform_SSBO;
+      int bone_count;
+};
+
+struct SkinnedMesh
+{
       std::vector<DrawCommand> draw_commands;
       std::vector<uint32_t> material_IDs;
+      std::string Name;
+
+      uint32_t skeleton_ID;
+
+      GLuint mesh_VAO;
+      GLuint postion_BO;
+      GLuint tex_coord_BO;
+      GLuint normal_BO;
+      GLuint index_BO;
+
+      GLuint index_count;
+      GLuint vertex_count;      
 };
+
+
 
 struct Transform
 {
@@ -88,12 +125,15 @@ public:
       packed_freelist<DiffuseMap> diffuse_maps;
       packed_freelist<Material> materials;
       packed_freelist<Mesh> meshes;
+      packed_freelist<SkinnedMesh> skinned_meshes;
       packed_freelist<Transform> transforms;
       packed_freelist<Instance> instances;
       packed_freelist<Camera> cameras;
+      packed_freelist<Skeleton> skeletons;
       packed_freelist<Skybox> skyboxes;
 
       uint32_t main_camera_ID;
+      std::map<std::string, uint32_t> skeleton_skinned_mesh_map;
 
       void Init();
 };
@@ -101,6 +141,10 @@ public:
 void LoadMeshes(Scene& scene,
                 const std::string& filename,
                 std::vector<uint32_t>* load_mesh_IDs);
+
+void LoadSkinnedMeshes(Scene& scene,
+                       const std::string& filename,
+                       std::vector<uint32_t>* load_mesh_IDs);
 
 void AddSkybox(Scene& scene, uint32_t* new_skybox_ID);
 

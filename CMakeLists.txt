@@ -17,6 +17,7 @@ add_executable(SceneRenderer
   penis/camera.cpp
   penis/entity.cpp
   penis/skybox.cpp
+  penis/animation.cpp
 
   c:/imgui/imgui.cpp
   c:/imgui/imgui_demo.cpp
@@ -29,6 +30,7 @@ add_executable(SceneRenderer
 
 target_include_directories(SceneRenderer PRIVATE
   include
+  penis_common
   c:/imgui
   c:/imgui/backends
 )
