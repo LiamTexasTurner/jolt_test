@@ -71,6 +71,14 @@ struct BoneInfo
       int index;
 };
 
+struct Animation
+{
+      std::string name;
+      std::vector<std::vector<transform_penis>> frame_poses;
+      int frame_count;
+      uint32_t skeleton_ID;
+};
+
 struct Skeleton
 {
       std::vector<BoneInfo> bone_info;
@@ -92,13 +100,13 @@ struct SkinnedMesh
       GLuint postion_BO;
       GLuint tex_coord_BO;
       GLuint normal_BO;
+      GLuint bone_IDs;
+      GLuint bone_weights;
       GLuint index_BO;
 
       GLuint index_count;
       GLuint vertex_count;      
 };
-
-
 
 struct Transform
 {
@@ -110,8 +118,9 @@ struct Transform
 
 struct Instance
 {
-      uint32_t mesh_ID;
       uint32_t transform_ID;
+      uint32_t mesh_ID;
+      uint32_t skinned_mesh_ID;
 };
 
 struct Opaque
@@ -138,19 +147,17 @@ public:
       void Init();
 };
 
-void LoadMeshes(Scene& scene,
-                const std::string& filename,
-                std::vector<uint32_t>* load_mesh_IDs);
+void LoadMeshes(Scene& scene, const std::string& filename, std::vector<uint32_t>* load_mesh_IDs);
 
-void LoadSkinnedMeshes(Scene& scene,
-                       const std::string& filename,
-                       std::vector<uint32_t>* load_mesh_IDs);
+void LoadSkinnedMeshes(Scene& scene, const std::string& filename, std::vector<uint32_t>* load_mesh_IDs);
+
+void LoadAnimation()
 
 void AddSkybox(Scene& scene, uint32_t* new_skybox_ID);
 
-void AddInstance(Scene& scene,
-                 uint32_t mesh_ID,
-                 uint32_t* new_instance_ID);
+void AddMeshInstance(Scene& scene, uint32_t mesh_ID, uint32_t* new_instance_ID);
+
+void AddSkinnedMeshInstance(Scene &scene, uint32_t skinned_mesh_ID, uint32_t *new_instance_ID);
 
 void RemoveInstance(Scene& scene, uint32_t instance_ID);
 

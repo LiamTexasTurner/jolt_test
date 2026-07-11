@@ -46,8 +46,8 @@ int main()
 {
 
       glfwInit();
-      glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4.3);
-      glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+      glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+      glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
       glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 
@@ -196,7 +196,7 @@ int main()
                   PREV_SCR_WIDTH = SCR_WIDTH;
                   PREV_SCR_HEIGHT = SCR_HEIGHT;
             }
- 
+       
             unsigned int render_texture = renderer->Paint();
 
             ImGui::Image((ImTextureID)(intptr_t)render_texture,
@@ -208,9 +208,13 @@ int main()
 
             ImGui::Begin("Details");
 
-            ImGui::End();
+            ImGui::PushFont(nullptr, 28.0f);
 
-            
+            ImGui::Text("%f", delta_time);
+
+            ImGui::PopFont();
+
+            ImGui::End();            
 
             ImGui::Render();
             int display_w, display_h;

@@ -13,6 +13,12 @@ uniform mat4 MW;
 layout(location = SCENE_MVP_UNIFORM_LOCATION)
 uniform mat4 MVP;
 
+layout(location = SCENE_VIEW_UNIFORM_LOCATION)
+uniform mat4 view;
+
+layout(location = SCENE_PROJECTON_UNIFORM_LOCATION)
+uniform mat4 projection;
+
 layout(location = SCENE_N_MW_UNIFORM_LOCATION)
 uniform mat3 N_MW;
 
@@ -33,5 +39,5 @@ void main()
     fWorldNormal = mat3(transpose(inverse(MW))) * Normal;
     fFragPos = vec3(MW * Position);
     fFragPosLightSpace = lightSpaceMatrix * vec4(fFragPos, 1.0);
-    gl_Position = MVP * Position;    
+    gl_Position = projection * view * MW * Position;    
 }

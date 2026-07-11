@@ -26,6 +26,8 @@ void load_attribute(cgltf_accessor* attribute, int num_comp, vector<T>& dst)
             }
             n += (int)(attribute->stride/sizeof(T));
       }
+
+      float x = 0;
 }
 
 void Scene::Init()
@@ -210,13 +212,8 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                         else
                         {
                               float x = 0;
-                        }
-
-                        
-                  }
-
-                  
-                  
+                        }                        
+                  }             
             }            
             break;
       }
@@ -360,6 +357,8 @@ void LoadSkinnedMeshes(Scene &scene, const string &filename, vector<uint32_t> *l
       vector<float> positions;
       vector<float> tex_coords;
       vector<float> normals;
+      vector<int>   bone_IDs;
+      vector<float> bone_weights;
       vector<uint32_t> indices;
       
 
@@ -408,6 +407,20 @@ void LoadSkinnedMeshes(Scene &scene, const string &filename, vector<uint32_t> *l
                               vector<float> prim_normals(attribute->count * 3);
                               load_attribute(attribute, 3, prim_normals);
                               normals.insert(normals.end(), prim_normals.begin(), prim_normals.end());
+                        }
+                        if(primitive->attributes[attrib_index].type == cgltf_attribute_type_joints)
+                        {
+                              cgltf_accessor* attribute = primitive->attributes[attrib_index].data;                              
+                              vector<unsigned char> prim_bone_IDs;
+                              load_attribute(attribute, MAX_BONE_INFLUENCE, prim_bone_IDs);
+                              bone_IDs.insert(bone_IDs.end(), prim_bone_IDs.begin(), prim_bone_IDs.end());
+                        }
+                        if(primitive->attributes[attrib_index].type == cgltf_attribute_type_weights)
+                        {
+                              cgltf_accessor* attribute = primitive->attributes[attrib_index].data;
+                              vector<float> prim_bone_weights;
+                              load_attribute(attribute, MAX_BONE_INFLUENCE, prim_bone_weights);
+                              bone_weights.insert(bone_weights.end(), prim_bone_weights.begin(), prim_bone_weights.end());
                         }
 
                   }
@@ -476,7 +489,6 @@ void LoadSkinnedMeshes(Scene &scene, const string &filename, vector<uint32_t> *l
                         new_skeleton.inv_bind_mats[i] = glm::make_mat4(values);
                   }
                   
-
                   glGenBuffers(1, &new_skeleton.bone_transform_SSBO);
 
                   glBindBuffer(GL_SHADER_STORAGE_BUFFER, new_skeleton.bone_transform_SSBO);
@@ -499,6 +511,8 @@ void LoadSkinnedMeshes(Scene &scene, const string &filename, vector<uint32_t> *l
       glGenBuffers(1, &skinned_mesh_result.postion_BO);
       glGenBuffers(1, &skinned_mesh_result.tex_coord_BO);
       glGenBuffers(1, &skinned_mesh_result.normal_BO);
+      glGenBuffers(1, &skinned_mesh_result.bone_IDs);
+      glGenBuffers(1, &skinned_mesh_result.bone_weights);
       glGenBuffers(1, &skinned_mesh_result.index_BO);
 
       glBindVertexArray(skinned_mesh_result.mesh_VAO);
@@ -516,7 +530,17 @@ void LoadSkinnedMeshes(Scene &scene, const string &filename, vector<uint32_t> *l
       glBindBuffer(GL_ARRAY_BUFFER, skinned_mesh_result.normal_BO);
       glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(normals[0]), normals.data(), GL_STATIC_DRAW);
       glVertexAttribPointer(SCENE_NORMAL_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
-      glEnableVertexAttribArray(SCENE_NORMAL_ATTRIB_LOCATION);   
+      glEnableVertexAttribArray(SCENE_NORMAL_ATTRIB_LOCATION);
+
+      glBindBuffer(GL_ARRAY_BUFFER, skinned_mesh_result.bone_IDs);
+      glBufferData(GL_ARRAY_BUFFER, bone_IDs.size() * sizeof(bone_IDs[0]), bone_IDs.data(), GL_STATIC_DRAW);
+      glVertexAttribIPointer(SCENE_BONE_ID_ATTRIB_LOCATION, MAX_BONE_INFLUENCE,GL_INT, sizeof(int) * MAX_BONE_INFLUENCE, nullptr);
+      glEnableVertexAttribArray(SCENE_BONE_ID_ATTRIB_LOCATION);
+
+      glBindBuffer(GL_ARRAY_BUFFER, skinned_mesh_result.bone_weights);
+      glBufferData(GL_ARRAY_BUFFER, bone_weights.size() * sizeof(bone_weights[0]), bone_weights.data(), GL_STATIC_DRAW);
+      glVertexAttribPointer(SCENE_BONE_WEIGHTS_ATTRIB_LOCATION, 1, GL_FLOAT, GL_FALSE, sizeof(float) * MAX_BONE_INFLUENCE, nullptr);
+      glEnableVertexAttribArray(SCENE_BONE_WEIGHTS_ATTRIB_LOCATION);
 
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skinned_mesh_result.index_BO);
       glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
@@ -537,7 +561,7 @@ void LoadSkinnedMeshes(Scene &scene, const string &filename, vector<uint32_t> *l
       }          
 }
 
-void AddInstance(Scene &scene, uint32_t mesh_ID, uint32_t *new_instance_ID)
+void AddMeshInstance(Scene &scene, uint32_t mesh_ID, uint32_t *new_instance_ID)
 {
       Transform new_transform;
       new_transform.scale = glm::vec3(1.0f);
@@ -546,6 +570,23 @@ void AddInstance(Scene &scene, uint32_t mesh_ID, uint32_t *new_instance_ID)
 
       Instance new_instance;
       new_instance.mesh_ID = mesh_ID;
+      new_instance.transform_ID = new_transform_ID;
+
+      uint32_t tmp_new_instance_ID = scene.instances.insert(new_instance);
+      if(new_instance_ID)
+      {
+            *new_instance_ID = tmp_new_instance_ID;
+      }      
+};
+void AddSkinnedMeshInstance(Scene &scene, uint32_t skinned_mesh_ID, uint32_t *new_instance_ID)
+{
+      Transform new_transform;
+      new_transform.scale = glm::vec3(1.0f);
+
+      uint32_t new_transform_ID = scene.transforms.insert(new_transform);
+
+      Instance new_instance;
+      new_instance.skinned_mesh_ID = skinned_mesh_ID;
       new_instance.transform_ID = new_transform_ID;
 
       uint32_t tmp_new_instance_ID = scene.instances.insert(new_instance);

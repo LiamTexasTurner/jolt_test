@@ -56,14 +56,20 @@ public:
       GLuint m_null_vao;
 
       void DrawDebugQuad(){render_shadow_map = !render_shadow_map;}
+
+      bool draw_skinned = false;
+      void toggle_skinned(){draw_skinned = ! draw_skinned;}
       
       void Init(Scene* scene) override;
       void Resize(int width, int height) override;
       unsigned int Paint() override;
       
 
-      std::vector<uint32_t> opaque_draw_list;
-      std::vector<uint32_t> transparent_draw_list;
+      std::vector<uint32_t> shadow_draw_list{};
+      std::vector<uint32_t> opaque_draw_list{};
+      std::vector<uint32_t> transparent_draw_list{};
+      std::vector<uint32_t> skinned_opaque_draw_list{};
+      std::vector<uint32_t> skinned_transparent_draw_list{};
       void CreateDrawList();
       void DrawShadowMap(const glm::mat4& light_space_matrix);
       void DrawSkybox(const glm::mat4& projection, const glm::mat4& view);
