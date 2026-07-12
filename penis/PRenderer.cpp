@@ -470,7 +470,7 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
       
 
 
-      glUseProgram(*m_skinning);
+      
 
 
       //draw skinned mesh
@@ -487,7 +487,7 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             
             FK(skeleton->bone_info, pose);
 
-            vector<glm::mat4> bone_mats(skeleton->bone_count);
+            vector<glm::mat4> anim_mats(skeleton->bone_count);
             
             for(int i = 0; i < skeleton->bone_count; i++)
             {          
@@ -496,17 +496,28 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
                         glm::translate(glm::mat4(1.0f), pose[i].translation) *
                         glm::toMat4(pose[i].rotation) *
                         glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+                  anim_mats[i] = anim_mat;
                   
-                  bone_mats[i] = anim_mat * skeleton->inv_bind_mats[i];
             }
 
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, skeleton->bone_transform_SSBO);
             GLsizeiptr buffer_size = sizeof(glm::mat4) * skeleton->bone_count;
-            glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, buffer_size, bone_mats.data());
+
+
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_INV_BIND_POSE_BINDING, skeleton->inv_bind_pose_SSBO);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, skeleton->bone_transform_SSBO);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+            
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, skeleton->anim_pose_SSBO);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, buffer_size, anim_mats.data());
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_POSE_BINDING, skeleton->anim_pose_SSBO);      
             
 
+
+            glUseProgram(*m_skin_compute);
+            glDispatchCompute(skeleton->bone_count, 1, 1);
+            glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+            
+            
+            
             Transform* transform = &m_scene->transforms[instance->transform_ID];
             transform->scale = glm::vec3(1.0f);
 
@@ -517,6 +528,7 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             MW = scale(transform->scale) * MW;
             MW = translate(transform->translation) * MW;
 
+            glUseProgram(*m_skinning);
             glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
             glUniformMatrix4fv(SCENE_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
             glUniformMatrix4fv(SCENE_PROJECTON_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));

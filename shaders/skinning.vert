@@ -30,7 +30,7 @@ out vec2 fTexCoord;
 
 void main()
 {
-    fTexCoord = TexCoord;
+  fTexCoord = TexCoord;
 
     
     vec4 skinnedPosition =
@@ -38,10 +38,7 @@ void main()
       bone_weights.y*(bone_mats[bone_ID.y]*Position) +
       bone_weights.z*(bone_mats[bone_ID.z]*Position) +
       bone_weights.w*(bone_mats[bone_ID.w]*Position);
-    
-
-
-
+  
     
   gl_Position = projection * view * MW * skinnedPosition;
     
