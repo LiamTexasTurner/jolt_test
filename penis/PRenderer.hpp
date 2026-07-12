@@ -25,7 +25,8 @@ public:
       GLuint* m_PP_crt;
       GLuint* m_PP_clear;
       GLuint* m_skinning;
-
+      GLuint* m_skin_compute;
+      
       unsigned int SCR_WIDTH;
       unsigned int SCR_HEIGHT;
 

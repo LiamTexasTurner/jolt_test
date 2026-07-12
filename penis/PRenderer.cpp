@@ -33,6 +33,7 @@ void PRenderer::Init(Scene* scene)
       m_PP_crt = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_crt.frag"});
       m_PP_clear = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_clear.frag"});
       m_skinning = m_shaders.AddProgramFromExts({"../shaders/skinning.vert","../shaders/skinning.frag"});
+      m_skin_compute = m_shaders.AddProgramFromExts({"../shaders/skin.comp"});
 
       glGenVertexArrays(1, &m_null_vao);
       glBindVertexArray(m_null_vao);
@@ -227,7 +228,7 @@ unsigned int PRenderer::Paint()
       DrawSkybox(projection, view);
 
       DrawOpaque(projection, view, light_space_matrix, light_pos, dir_light_col);
-
+      
       DrawTransparent(projection, view, light_space_matrix, light_pos, dir_light_col);
 
       BlitFrameBuffer(back_buffer_multi_samp_FBO, back_buffer_single_samp_FBO, SCR_WIDTH, SCR_HEIGHT);
@@ -478,29 +479,23 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             const Instance* instance = &m_scene->instances[instance_ID];
             const SkinnedMesh* skinned_mesh = &m_scene->skinned_meshes[instance->skinned_mesh_ID];
             const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh->skeleton_ID];
-            const Animation* animation = &m_scene->animations[0];
+            const Animation* animation = &m_scene->animations[1];
 
       
-            vector<transform_penis> pose = animation->frame_poses[2];
-            // vector<transform_penis> pose_buffer = skeleton->inv_bind_mats;
-            // vector<transform_penis> pose = skeleton->bind_pose;
+            vector<transform_penis> pose = animation->frame_poses[2];            
             
             FK(skeleton->bone_info, pose);
 
             vector<glm::mat4> bone_mats(skeleton->bone_count);
+            
             for(int i = 0; i < skeleton->bone_count; i++)
             {          
-                  glm::mat4 bind_mat =
-                        glm::translate(glm::mat4(1.0f), skeleton->bind_pose[i].translation) *
-                        glm::toMat4(skeleton->bind_pose[i].rotation) *
-                        glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
                   
                   glm::mat4 anim_mat =
                         glm::translate(glm::mat4(1.0f), pose[i].translation) *
                         glm::toMat4(pose[i].rotation) *
                         glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
-
-                  // bone_mats[i] = anim_mat * glm::inverse(bind_mat);
+                  
                   bone_mats[i] = anim_mat * skeleton->inv_bind_mats[i];
             }
 
@@ -522,16 +517,10 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             MW = scale(transform->scale) * MW;
             MW = translate(transform->translation) * MW;
 
-            // glm::mat4 MVP = VP * MW;
-
             glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
             glUniformMatrix4fv(SCENE_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
             glUniformMatrix4fv(SCENE_PROJECTON_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
-            // glNamedBufferSubData(skeleton->bone_transform_SSBO, 0, null_anim.size() * sizeof(glm::mat4), null_anim.data());
-
-
-
-
+            
             glBindVertexArray(skinned_mesh->mesh_VAO);
             for(size_t mesh_draw_index = 0; mesh_draw_index < skinned_mesh->draw_commands.size(); mesh_draw_index++)
             {
