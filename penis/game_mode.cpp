@@ -119,6 +119,10 @@ public:
             //       }
             // }
 
+            vector<uint32_t> animation_IDs;
+            animation_IDs.clear();
+            LoadAnimation(*m_scene, "../resources/chips_2/chips_2.gltf", &animation_IDs);
+
             
 
             AddSkybox(*m_scene, &current_skybox);

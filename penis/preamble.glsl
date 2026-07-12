@@ -82,4 +82,7 @@
 #define DEBUG_DEPTH_MAP_NEAR_PLANE 1
 #define DEBUG_DEPTH_MAP_FAR_PLANE 2
 
+//structs
+
+
 #endif // PREAMBLE_GLSL

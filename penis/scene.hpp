@@ -66,22 +66,23 @@ struct Mesh
 
 struct BoneInfo
 {
-      char name[32];
       int parent;
       int index;
+      std::string name;
 };
 
 struct Animation
 {
       std::string name;
       std::vector<std::vector<transform_penis>> frame_poses;
-      int frame_count;
       uint32_t skeleton_ID;
+      int frame_count;
 };
 
 struct Skeleton
 {
       std::vector<BoneInfo> bone_info;
+      std::vector<transform_penis> bind_pose;
       std::vector<glm::mat4> inv_bind_mats;
       std::string name;
       GLuint bone_transform_SSBO;
@@ -135,6 +136,7 @@ public:
       packed_freelist<Material> materials;
       packed_freelist<Mesh> meshes;
       packed_freelist<SkinnedMesh> skinned_meshes;
+      packed_freelist<Animation> animations;
       packed_freelist<Transform> transforms;
       packed_freelist<Instance> instances;
       packed_freelist<Camera> cameras;
@@ -151,7 +153,7 @@ void LoadMeshes(Scene& scene, const std::string& filename, std::vector<uint32_t>
 
 void LoadSkinnedMeshes(Scene& scene, const std::string& filename, std::vector<uint32_t>* load_mesh_IDs);
 
-void LoadAnimation()
+void LoadAnimation(Scene& scene, const std::string& filename, std::vector<uint32_t>* animation_IDs);
 
 void AddSkybox(Scene& scene, uint32_t* new_skybox_ID);
 

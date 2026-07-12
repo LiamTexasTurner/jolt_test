@@ -1,20 +1,21 @@
 #include "PRenderer.hpp"
 
-
-
 #include "GLFW/glfw3.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#include "animation.hpp"
+
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <span>
 
 
 using namespace std;
-      
+
 void PRenderer::Init(Scene* scene) 
 {
       m_scene = scene;
@@ -184,20 +185,20 @@ void PRenderer::Resize(int width, int height)
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
       }
-            
-            
+      
+      
 }
 
 unsigned int PRenderer::Paint() 
 {
       m_shaders.UpdatePrograms();
-
-
+                        
+                              
       glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 3000.0f);
-
+                  
       Camera* cam = &m_scene->cameras[m_scene->main_camera_ID];
 
       glm::mat4 view = glm::inverse(cam->GetWorldMat());
@@ -205,7 +206,7 @@ unsigned int PRenderer::Paint()
       float near_plane = -10.0f, far_plane = 20.5f;
       float ortho_size = 20.0f;
       glm::vec3 light_pos = glm::vec3(-1.0f, 2.0f, 0.2f);
-            
+      
       glm::mat4 light_projection = glm::ortho(-ortho_size, ortho_size, -ortho_size, ortho_size, near_plane, far_plane);
       glm::mat4 light_view = glm::lookAt(light_pos, 
                                          glm::vec3(0.0f), 
@@ -213,7 +214,7 @@ unsigned int PRenderer::Paint()
       glm::mat4 light_space_matrix = light_projection * light_view;
 
       float intensity = 10.0f;
-
+      
       glm::vec3 dir_light_col = glm::vec3(78.0f + intensity,
                                           77.0f + intensity,
                                           92.0f + intensity) / 100.0f;
@@ -222,7 +223,7 @@ unsigned int PRenderer::Paint()
       CreateDrawList();
       
       DrawShadowMap(light_space_matrix);
-
+      
       DrawSkybox(projection, view);
 
       DrawOpaque(projection, view, light_space_matrix, light_pos, dir_light_col);
@@ -291,11 +292,11 @@ void PRenderer::CreateDrawList()
       glm::vec3 main_cam_pos = m_scene->cameras[m_scene->main_camera_ID].translation;
       sort(transparent_draw_list.begin(), transparent_draw_list.end(),
            [main_cam_pos, this](const uint32_t& a, const uint32_t& b)
-           {      
-                 float dist_a = glm::length(main_cam_pos - m_scene->transforms[m_scene->instances[a].transform_ID].translation);
-                 float dist_b = glm::length(main_cam_pos - m_scene->transforms[m_scene->instances[b].transform_ID].translation);
-                 return dist_a < dist_b;
-           });           
+                 {      
+                       float dist_a = glm::length(main_cam_pos - m_scene->transforms[m_scene->instances[a].transform_ID].translation);
+                       float dist_b = glm::length(main_cam_pos - m_scene->transforms[m_scene->instances[b].transform_ID].translation);
+                       return dist_a < dist_b;
+                 });           
 }
 
 void PRenderer::DrawShadowMap(const glm::mat4& light_space_matrix)
@@ -305,45 +306,45 @@ void PRenderer::DrawShadowMap(const glm::mat4& light_space_matrix)
       glEnable(GL_DEPTH_TEST);     
       glClear(GL_DEPTH_BUFFER_BIT);
       glUseProgram(*m_shadow_map_SP);
-            
+      
       for(uint32_t instance_ID : shadow_draw_list)
-            {
-                  const Instance* instance = &m_scene->instances[instance_ID];
-                  const Mesh* mesh = &m_scene->meshes[instance->mesh_ID];
-                  Transform* transform = &m_scene->transforms[instance->transform_ID];
-                  transform->scale = glm::vec3(1.0f);
-            
-                  glm::mat4 MW = glm::mat4(1.0f);
-                  MW = translate(-transform->rotation_origin) * MW;
-                  MW = mat4_cast(transform->rotation) * MW;
-                  MW = translate(transform->rotation_origin) * MW;
-                  MW = scale(transform->scale) * MW;
-                  MW = translate(transform->translation) * MW;
-      
-                  glUniformMatrix4fv(SHADOW_MAP_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
-                  glUniformMatrix4fv(SHADOW_MAP_LIGHT_SPACE_MATRIX_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(light_space_matrix));
-      
-                  glBindVertexArray(mesh->mesh_VAO);
-                  for(size_t mesh_draw_index = 0; mesh_draw_index < mesh->draw_commands.size(); mesh_draw_index++)
-                  {
-                        const GLDrawElementsIndirectCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index].gl_draw_ele_cmd;
+      {
+            const Instance* instance = &m_scene->instances[instance_ID];
+            const Mesh* mesh = &m_scene->meshes[instance->mesh_ID];
+            Transform* transform = &m_scene->transforms[instance->transform_ID];
+            transform->scale = glm::vec3(1.0f);
 
-                        const Material* material = &m_scene->materials[mesh->material_IDs[mesh_draw_index]];
-      
-                        glActiveTexture(GL_TEXTURE0 + SHADOW_DIFFUSE_MAP_TEXTURE_BINDING);
-                        const DiffuseMap* diffuse_map = &m_scene->diffuse_maps[material->diffuse_map_ID];
-                        glBindTexture(GL_TEXTURE_2D, diffuse_map->DiffuseMapTO);
-                        
-                        glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES,
-                                                                      draw_cmd->count,
-                                                                      GL_UNSIGNED_INT,
-                                                                      (GLvoid*)(sizeof(uint32_t) * draw_cmd->firstIndex),
-                                                                      draw_cmd->primCount,
-                                                                      draw_cmd->baseVertex,
-                                                                      draw_cmd->baseInstance);
-                  }                  
-                  glBindVertexArray(0);
-            }
+            glm::mat4 MW = glm::mat4(1.0f);
+            MW = translate(-transform->rotation_origin) * MW;
+            MW = mat4_cast(transform->rotation) * MW;
+            MW = translate(transform->rotation_origin) * MW;
+            MW = scale(transform->scale) * MW;
+            MW = translate(transform->translation) * MW;
+
+            glUniformMatrix4fv(SHADOW_MAP_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
+            glUniformMatrix4fv(SHADOW_MAP_LIGHT_SPACE_MATRIX_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(light_space_matrix));
+
+            glBindVertexArray(mesh->mesh_VAO);
+            for(size_t mesh_draw_index = 0; mesh_draw_index < mesh->draw_commands.size(); mesh_draw_index++)
+            {
+                  const GLDrawElementsIndirectCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index].gl_draw_ele_cmd;
+
+                  const Material* material = &m_scene->materials[mesh->material_IDs[mesh_draw_index]];
+
+                  glActiveTexture(GL_TEXTURE0 + SHADOW_DIFFUSE_MAP_TEXTURE_BINDING);
+                  const DiffuseMap* diffuse_map = &m_scene->diffuse_maps[material->diffuse_map_ID];
+                  glBindTexture(GL_TEXTURE_2D, diffuse_map->DiffuseMapTO);
+
+                  glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES,
+                                                                draw_cmd->count,
+                                                                GL_UNSIGNED_INT,
+                                                                (GLvoid*)(sizeof(uint32_t) * draw_cmd->firstIndex),
+                                                                draw_cmd->primCount,
+                                                                draw_cmd->baseVertex,
+                                                                draw_cmd->baseInstance);
+            }                  
+            glBindVertexArray(0);
+      }
       ResetRenderState();
 }
 
@@ -393,122 +394,180 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
       glm::mat4 VP = projection * view;
       glUseProgram(*m_scene_SP);
       glUniform3fv(SCENE_CAMERAPOS_UNIFORM_LOCATION, 1, glm::value_ptr(view[3]));
-
-
+      
+      
 
       for(uint32_t instance_ID : opaque_draw_list)
+      {
+            const Instance* instance = &m_scene->instances[instance_ID];
+            const Mesh* mesh = &m_scene->meshes[instance->mesh_ID];
+            Transform* transform = &m_scene->transforms[instance->transform_ID];
+            transform->scale = glm::vec3(1.0f);
+
+            glm::mat4 MW = glm::mat4(1.0f);
+            MW = translate(-transform->rotation_origin) * MW;
+            MW = mat4_cast(transform->rotation) * MW;
+            MW = translate(transform->rotation_origin) * MW;
+            MW = scale(transform->scale) * MW;
+            MW = translate(transform->translation) * MW;
+
+            glm::mat4 MVP = VP * MW;
+
+
+            glm::mat3 N_MW = glm::mat4(1.0f);
+            N_MW = mat3_cast(transform->rotation) * N_MW;
+            N_MW = glm::mat3(scale(1.0f / transform->scale)) * N_MW;
+
+            glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
+            glUniformMatrix4fv(SCENE_N_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(N_MW));
+            glUniformMatrix4fv(SCENE_MVP_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MVP));
+            glUniformMatrix4fv(SCENE_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
+            glUniformMatrix4fv(SCENE_PROJECTON_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
+            glUniformMatrix4fv(SCENE_LIGHT_SPACE_MATRIX_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(light_space_matrix));
+            glUniform3fv(SCENE_LIGHT_POS, 1, value_ptr(light_pos));
+            glUniform3fv(SCENE_LIGHT_COLOR, 1, value_ptr(dir_light_col));
+
+            glActiveTexture(GL_TEXTURE0 + SCENE_SHADOW_MAP_TEXTURE_BINDING);
+            glBindTexture(GL_TEXTURE_2D, shadow_map_T);
+            glBindVertexArray(mesh->mesh_VAO);
+            for(size_t mesh_draw_index = 0; mesh_draw_index < mesh->draw_commands.size(); mesh_draw_index++)
             {
-                  const Instance* instance = &m_scene->instances[instance_ID];
-                  const Mesh* mesh = &m_scene->meshes[instance->mesh_ID];
-                  Transform* transform = &m_scene->transforms[instance->transform_ID];
-                  transform->scale = glm::vec3(1.0f);
-      
-                  glm::mat4 MW = glm::mat4(1.0f);
-                  MW = translate(-transform->rotation_origin) * MW;
-                  MW = mat4_cast(transform->rotation) * MW;
-                  MW = translate(transform->rotation_origin) * MW;
-                  MW = scale(transform->scale) * MW;
-                  MW = translate(transform->translation) * MW;
+                  const GLDrawElementsIndirectCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index].gl_draw_ele_cmd;
+                  const Material* material = &m_scene->materials[mesh->material_IDs[mesh_draw_index]];
 
-                  glm::mat4 MVP = VP * MW;
 
-                        
-                  glm::mat3 N_MW = glm::mat4(1.0f);
-                  N_MW = mat3_cast(transform->rotation) * N_MW;
-                  N_MW = glm::mat3(scale(1.0f / transform->scale)) * N_MW;
-      
-                  glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
-                  glUniformMatrix4fv(SCENE_N_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(N_MW));
-                  glUniformMatrix4fv(SCENE_MVP_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MVP));
-                  glUniformMatrix4fv(SCENE_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
-                  glUniformMatrix4fv(SCENE_PROJECTON_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
-                  glUniformMatrix4fv(SCENE_LIGHT_SPACE_MATRIX_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(light_space_matrix));
-                  glUniform3fv(SCENE_LIGHT_POS, 1, value_ptr(light_pos));
-                  glUniform3fv(SCENE_LIGHT_COLOR, 1, value_ptr(dir_light_col));
+                  glUniform2fv(SCENE_TEXCOORD_SCALE, 1, value_ptr(material->scale));
+                  glUniform2fv(SCENE_TEXCOORD_OFFSET, 1, value_ptr(material->offset));
 
-                  glActiveTexture(GL_TEXTURE0 + SCENE_SHADOW_MAP_TEXTURE_BINDING);
-                  glBindTexture(GL_TEXTURE_2D, shadow_map_T);
-                  glBindVertexArray(mesh->mesh_VAO);
-                  for(size_t mesh_draw_index = 0; mesh_draw_index < mesh->draw_commands.size(); mesh_draw_index++)
+                  glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
+                  if(material->diffuse_map_ID == -1)
                   {
-                        const GLDrawElementsIndirectCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index].gl_draw_ele_cmd;
-                        const Material* material = &m_scene->materials[mesh->material_IDs[mesh_draw_index]];
-
-                  
-                        glUniform2fv(SCENE_TEXCOORD_SCALE, 1, value_ptr(material->scale));
-                        glUniform2fv(SCENE_TEXCOORD_OFFSET, 1, value_ptr(material->offset));
-
-                        glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
-                        if(material->diffuse_map_ID == -1)
-                        {
-                              glBindTexture(GL_TEXTURE_2D, 0);
-                              glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 0);
-                        }
-                        else
-                        {
-                              const DiffuseMap* diffuse_map = &m_scene->diffuse_maps[material->diffuse_map_ID];
-                              glBindTexture(GL_TEXTURE_2D, diffuse_map->DiffuseMapTO);
-                              glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 1);
-                        }
-      
-                        glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES,
-                                                                      draw_cmd->count,
-                                                                      GL_UNSIGNED_INT,
-                                                                      (GLvoid*)(sizeof(uint32_t) * draw_cmd->firstIndex),
-                                                                      draw_cmd->primCount,
-                                                                      draw_cmd->baseVertex,
-                                                                      draw_cmd->baseInstance);
-                                                                       
-                  
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                        glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 0);
                   }
-                  
-                  glBindVertexArray(0);
+                  else
+                  {
+                        const DiffuseMap* diffuse_map = &m_scene->diffuse_maps[material->diffuse_map_ID];
+                        glBindTexture(GL_TEXTURE_2D, diffuse_map->DiffuseMapTO);
+                        glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 1);
+                  }
+
+                  glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES,
+                                                                draw_cmd->count,
+                                                                GL_UNSIGNED_INT,
+                                                                (GLvoid*)(sizeof(uint32_t) * draw_cmd->firstIndex),
+
+                                                                draw_cmd->primCount,
+                                                                draw_cmd->baseVertex,
+                                                                draw_cmd->baseInstance);
+
+
             }
+
+            glBindVertexArray(0);
+      }
       
 
 
       glUseProgram(*m_skinning);
+
       
       for(uint32_t instance_ID : skinned_opaque_draw_list)
-            {
-                  const Instance* instance = &m_scene->instances[instance_ID];
-                  const SkinnedMesh* skinned_mesh = &m_scene->skinned_meshes[instance->skinned_mesh_ID];
-                  const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh->skeleton_ID];
+      {
 
-                  Transform* transform = &m_scene->transforms[instance->transform_ID];
-                  transform->scale = glm::vec3(1.0f);
+            const Instance* instance = &m_scene->instances[instance_ID];
+            const SkinnedMesh* skinned_mesh = &m_scene->skinned_meshes[instance->skinned_mesh_ID];
+            const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh->skeleton_ID];
+            const Animation* animation = &m_scene->animations[0];
 
-                  glm::mat4 MW = glm::mat4(1.0f);
-                  MW = translate(-transform->rotation_origin) * MW;
-                  MW = mat4_cast(transform->rotation) * MW;
-                  MW = translate(transform->rotation_origin) * MW;
-                  MW = scale(transform->scale) * MW;
-                  MW = translate(transform->translation) * MW;
-
-                  // glm::mat4 MVP = VP * MW;
-
-                  glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
-                  glUniformMatrix4fv(SCENE_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
-                  glUniformMatrix4fv(SCENE_PROJECTON_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
-                  // glNamedBufferSubData(skeleton->bone_transform_SSBO, 0, null_anim.size() * sizeof(glm::mat4), null_anim.data());
-
-                  
-                  
-
-                  glBindVertexArray(skinned_mesh->mesh_VAO);
-                  for(size_t mesh_draw_index = 0; mesh_draw_index < skinned_mesh->draw_commands.size(); mesh_draw_index++)
-                  {
-                        const GLDrawElementsIndirectCommand* draw_cmd = &skinned_mesh->draw_commands[mesh_draw_index].gl_draw_ele_cmd;
-                        glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES,
-                                                                      draw_cmd->count,
-                                                                      GL_UNSIGNED_INT,
-                                                                      (GLvoid*)(sizeof(uint32_t) * draw_cmd->firstIndex),
-                                                                      draw_cmd->primCount,
-                                                                      draw_cmd->baseVertex,
-                                                                      draw_cmd->baseInstance);
-                  }
+      
+            // vector<transform_penis> pose = animation->frame_poses[2];
+            // vector<transform_penis> pose_buffer = skeleton->inv_bind_mats;
+            vector<transform_penis> pose = skeleton->bind_pose;
             
+            // FK(skeleton->bone_info, pose);
+
+            vector<glm::mat4> bone_mats(skeleton->bone_count);
+            for(int i = 0; i < skeleton->bone_count; i++)
+            {          
+                  glm::mat4 bind_mat =
+                        glm::translate(glm::mat4(1.0f), skeleton->bind_pose[i].translation) *
+                        glm::toMat4(skeleton->bind_pose[i].rotation) *
+                        glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+                  
+                  glm::mat4 anim_mat =
+                        glm::translate(glm::mat4(1.0f), pose[i].translation) *
+                        glm::toMat4(pose[i].rotation) *
+                        glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+
+                  // bone_mats[i] = anim_mat * glm::inverse(bind_mat);
+                  bone_mats[i] = anim_mat * skeleton->inv_bind_mats[i];
+
+
+      
             }
+
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, skeleton->bone_transform_SSBO);
+            GLsizeiptr buffer_size = sizeof(glm::mat4) * skeleton->bone_count;
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, buffer_size, bone_mats.data());
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, skeleton->bone_transform_SSBO);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+            
+
+            Transform* transform = &m_scene->transforms[instance->transform_ID];
+            transform->scale = glm::vec3(1.0f);
+
+            glm::mat4 MW = glm::mat4(1.0f);
+            MW = translate(-transform->rotation_origin) * MW;
+            MW = mat4_cast(transform->rotation) * MW;
+            MW = translate(transform->rotation_origin) * MW;
+            MW = scale(transform->scale) * MW;
+            MW = translate(transform->translation) * MW;
+
+            // glm::mat4 MVP = VP * MW;
+
+            glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
+            glUniformMatrix4fv(SCENE_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
+            glUniformMatrix4fv(SCENE_PROJECTON_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
+            // glNamedBufferSubData(skeleton->bone_transform_SSBO, 0, null_anim.size() * sizeof(glm::mat4), null_anim.data());
+
+
+
+
+            glBindVertexArray(skinned_mesh->mesh_VAO);
+            for(size_t mesh_draw_index = 0; mesh_draw_index < skinned_mesh->draw_commands.size(); mesh_draw_index++)
+            {
+                  const GLDrawElementsIndirectCommand* draw_cmd = &skinned_mesh->draw_commands[mesh_draw_index].gl_draw_ele_cmd;
+                  const Material* material = &m_scene->materials[skinned_mesh->material_IDs[mesh_draw_index]];
+
+
+                  glUniform2fv(SCENE_TEXCOORD_SCALE, 1, value_ptr(material->scale));
+                  glUniform2fv(SCENE_TEXCOORD_OFFSET, 1, value_ptr(material->offset));
+
+                  glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
+                  if(material->diffuse_map_ID == -1)
+                  {
+                        glBindTexture(GL_TEXTURE_2D, 0);
+                        glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 0);
+                  }
+                  else
+                  {
+                        const DiffuseMap* diffuse_map = &m_scene->diffuse_maps[material->diffuse_map_ID];
+                        glBindTexture(GL_TEXTURE_2D, diffuse_map->DiffuseMapTO);
+                        glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 1);
+                  }
+
+                  glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES,
+                                                                draw_cmd->count,
+                                                                GL_UNSIGNED_INT,
+                                                                (GLvoid*)(sizeof(uint32_t) * draw_cmd->firstIndex),
+                                                                draw_cmd->primCount,
+                                                                draw_cmd->baseVertex,
+                                                                draw_cmd->baseInstance);
+            }
+
+      }
       glUseProgram(0);
       glBindVertexArray(0);
 
@@ -540,14 +599,14 @@ void PRenderer::DrawTransparent(const glm::mat4& projection,
       glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
       glm::mat4 VP = projection * view;
-            
+      
       for(uint32_t instance_ID : transparent_draw_list)
       {
             const Instance* instance = &m_scene->instances[instance_ID];
             const Mesh* mesh = &m_scene->meshes[instance->mesh_ID];
             Transform* transform = &m_scene->transforms[instance->transform_ID];
             transform->scale = glm::vec3(1.0f);
-      
+
             glm::mat4 MW = glm::mat4(1.0f);
             MW = translate(-transform->rotation_origin) * MW;
             MW = mat4_cast(transform->rotation) * MW;
@@ -557,11 +616,11 @@ void PRenderer::DrawTransparent(const glm::mat4& projection,
 
             glm::mat4 MVP = VP * MW;
 
-                        
+
             glm::mat3 N_MW = glm::mat4(1.0f);
             N_MW = mat3_cast(transform->rotation) * N_MW;
             N_MW = glm::mat3(scale(1.0f / transform->scale)) * N_MW;
-      
+
             glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
             glUniformMatrix4fv(SCENE_N_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(N_MW));
             glUniformMatrix4fv(SCENE_MVP_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MVP));
@@ -601,10 +660,10 @@ void PRenderer::DrawTransparent(const glm::mat4& projection,
                                                                 draw_cmd->primCount,
                                                                 draw_cmd->baseVertex,
                                                                 draw_cmd->baseInstance);
-                                                                       
-                  
+
+
             }
-                  
+
             glBindVertexArray(0);
       }
       ResetRenderState();
