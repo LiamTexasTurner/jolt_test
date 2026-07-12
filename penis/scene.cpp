@@ -883,13 +883,32 @@ uint32_t LoadSkeleton(Scene& scene, cgltf_skin* skin)
             new_skeleton.bind_pose[i].rotation = rotation;
             new_skeleton.bind_pose[i].scale = scale;
       }
-                  
+
+      glGenBuffers(1, &new_skeleton.inv_bind_pose_SSBO);
+      glGenBuffers(1, &new_skeleton.anim_pose_SSBO);
       glGenBuffers(1, &new_skeleton.bone_transform_SSBO);
 
-      glBindBuffer(GL_SHADER_STORAGE_BUFFER, new_skeleton.bone_transform_SSBO);
-      GLsizeiptr buffer_size = sizeof(glm::mat4) * new_skeleton.bone_count;
-      glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
-      glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+      {
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, new_skeleton.inv_bind_pose_SSBO);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, new_skeleton.inv_bind_pose_SSBO);
+            GLsizeiptr buffer_size = sizeof(glm::mat4) * new_skeleton.bone_count;
+            glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, new_skeleton.inv_bind_mats.data(), GL_STATIC_DRAW);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+      }
+      {
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, new_skeleton.anim_pose_SSBO);
+            GLsizeiptr buffer_size = sizeof(glm::mat4) * new_skeleton.bone_count;
+            glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);      
+      }
+             
+      {
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, new_skeleton.bone_transform_SSBO);
+            GLsizeiptr buffer_size = sizeof(glm::mat4) * new_skeleton.bone_count;
+            glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);      
+      }
+            
                                           
       uint32_t new_skeleton_ID = scene.skeletons.insert(new_skeleton);
       scene.skeleton_skinned_mesh_map.emplace(string(skin->name), new_skeleton_ID);

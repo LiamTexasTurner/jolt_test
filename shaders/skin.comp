@@ -1,9 +1,20 @@
-layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 1, local_size_y = 32, local_size_z = 1) in;
 
-layout(std430, binding = SCENE_BONE_MAT_SSBO_BINDING) writeonly buffer bone_buffer
+layout(std430, binding = SCENE_INV_BIND_POSE_BINDING) readonly buffer InverseBoneMat
+{
+  mat4 inv_bone_mat[];
+};
+layout(std430, binding = SCENE_INV_BIND_POSE_BINDING) readonly buffer AnimBoneMat
+{
+  mat4 anim_bone_mat[];
+};
+
+layout(std430, binding = SCENE_BONE_MAT_SSBO_BINDING) writeonly buffer BoneBuffer
 {
   mat4 bone_mats[];
 };
+
+
 
 void main()
 {

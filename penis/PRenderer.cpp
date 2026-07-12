@@ -472,7 +472,8 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
 
       glUseProgram(*m_skinning);
 
-      
+
+      //draw skinned mesh
       for(uint32_t instance_ID : skinned_opaque_draw_list)
       {
 
@@ -504,7 +505,6 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, buffer_size, bone_mats.data());
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, skeleton->bone_transform_SSBO);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
             
 
             Transform* transform = &m_scene->transforms[instance->transform_ID];

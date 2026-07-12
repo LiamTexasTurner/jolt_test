@@ -86,6 +86,8 @@ struct Skeleton
       std::vector<glm::mat4> inv_bind_mats;
       std::string name;
       GLuint bone_transform_SSBO;
+      GLuint inv_bind_pose_SSBO;
+      GLuint anim_pose_SSBO;
       int bone_count;
 };
 
