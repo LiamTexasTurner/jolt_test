@@ -481,11 +481,11 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             const Animation* animation = &m_scene->animations[0];
 
       
-            // vector<transform_penis> pose = animation->frame_poses[2];
+            vector<transform_penis> pose = animation->frame_poses[2];
             // vector<transform_penis> pose_buffer = skeleton->inv_bind_mats;
-            vector<transform_penis> pose = skeleton->bind_pose;
+            // vector<transform_penis> pose = skeleton->bind_pose;
             
-            // FK(skeleton->bone_info, pose);
+            FK(skeleton->bone_info, pose);
 
             vector<glm::mat4> bone_mats(skeleton->bone_count);
             for(int i = 0; i < skeleton->bone_count; i++)
@@ -502,9 +502,6 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
 
                   // bone_mats[i] = anim_mat * glm::inverse(bind_mat);
                   bone_mats[i] = anim_mat * skeleton->inv_bind_mats[i];
-
-
-      
             }
 
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, skeleton->bone_transform_SSBO);

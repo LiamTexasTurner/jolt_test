@@ -745,7 +745,7 @@ void LoadAnimation(Scene& scene, const std::string& filename, std::vector<uint32
             float anim_duration = 0.0f;
             vector<animation_channels> bone_channels(bone_count);
 
-            for(int channel_index = 0; channel_index < bone_count; channel_index++)
+            for(int channel_index = 0; channel_index < anim_data->channels_count; channel_index++)
             {
                   cgltf_animation_channel* channel = &anim_data->channels[channel_index];
                   int bone_index = -1;
