@@ -886,6 +886,7 @@ uint32_t LoadSkeleton(Scene& scene, cgltf_skin* skin)
 
       glGenBuffers(1, &new_skeleton.inv_bind_pose_SSBO);
       glGenBuffers(1, &new_skeleton.anim_pose_SSBO);
+      glGenBuffers(1, &new_skeleton.anim_trs_SSBO);
       glGenBuffers(1, &new_skeleton.bone_transform_SSBO);
 
       {
@@ -898,6 +899,13 @@ uint32_t LoadSkeleton(Scene& scene, cgltf_skin* skin)
       {
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, new_skeleton.anim_pose_SSBO);
             GLsizeiptr buffer_size = sizeof(glm::mat4) * new_skeleton.bone_count;
+            glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);      
+      }
+
+      {
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, new_skeleton.anim_trs_SSBO);
+            GLsizeiptr buffer_size = sizeof(trs) * new_skeleton.bone_count;
             glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);      
       }

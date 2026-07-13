@@ -487,33 +487,33 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             
             FK(skeleton->bone_info, pose);
 
-            vector<glm::mat4> anim_mats(skeleton->bone_count);
+           
             
+            vector<trs> anim_trs(skeleton->bone_count);
             for(int i = 0; i < skeleton->bone_count; i++)
-            {          
-                  
-                  glm::mat4 anim_mat =
-                        glm::translate(glm::mat4(1.0f), pose[i].translation) *
-                        glm::toMat4(pose[i].rotation) *
-                        glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
-                  anim_mats[i] = anim_mat;
-                  
+            {
+                  anim_trs[i].t = glm::vec4(pose[i].translation.x, pose[i].translation.y, pose[i].translation.z, 1.0f);
+                  anim_trs[i].r = glm::vec4(pose[i].rotation.x, pose[i].rotation.y, pose[i].rotation.z, pose[i].rotation.w);
+                  anim_trs[i].s = glm::vec4(pose[i].scale.x, pose[i].scale.y, pose[i].scale.z, 1.0f);
             }
 
-            GLsizeiptr buffer_size = sizeof(glm::mat4) * skeleton->bone_count;
-
+            
 
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_INV_BIND_POSE_BINDING, skeleton->inv_bind_pose_SSBO);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, skeleton->bone_transform_SSBO);
+
             
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, skeleton->anim_pose_SSBO);
-            glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, buffer_size, anim_mats.data());
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_POSE_BINDING, skeleton->anim_pose_SSBO);      
+            GLsizeiptr buffer_size = sizeof(trs) * skeleton->bone_count;
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, skeleton->anim_trs_SSBO);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, buffer_size, anim_trs.data());
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_TRS_BINDING, skeleton->anim_trs_SSBO);      
+            
+            
             
 
 
             glUseProgram(*m_skin_compute);
-            glDispatchCompute(skeleton->bone_count, 1, 1);
+            glDispatchCompute((skeleton->bone_count + SKINNING_GROUP_SIZE_X - 1) / SKINNING_GROUP_SIZE_X, 1, 1);
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             
             

@@ -88,6 +88,7 @@ struct Skeleton
       GLuint bone_transform_SSBO;
       GLuint inv_bind_pose_SSBO;
       GLuint anim_pose_SSBO;
+      GLuint anim_trs_SSBO;
       int bone_count;
 };
 

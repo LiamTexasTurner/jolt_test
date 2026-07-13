@@ -10,3 +10,9 @@ struct transform_penis
       glm::quat rotation;
       glm::vec3 scale;
 };
+struct trs
+{
+      glm::vec4 t;
+      glm::vec4 r;
+      glm::vec4 s;
+};

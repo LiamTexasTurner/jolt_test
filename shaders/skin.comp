@@ -1,23 +1,76 @@
-layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = SKINNING_GROUP_SIZE_X, local_size_y = SKINNING_GROUP_SIZE_Y, local_size_z = SKINNING_GROUP_SIZE_Z) in;
+
+struct TRS
+{
+  vec4 translation;
+  vec4 rotation;
+  vec4 scale;
+};
+
+layout(std430, binding = SKINNING_COMPUTE_TRS_BINDING) readonly buffer TRSData
+{
+  TRS trs_data[];
+};
 
 layout(std430, binding = SKINNING_COMPUTE_INV_BIND_POSE_BINDING) readonly buffer InverseBoneMat
 {
   mat4 inv_bone_mat[];
 };
-layout(std430, binding = SKINNING_COMPUTE_POSE_BINDING) readonly buffer AnimBoneMat
-{
-  mat4 anim_bone_mat[];
-};
+
 
 layout(std430, binding = SCENE_BONE_MAT_SSBO_BINDING) writeonly buffer BoneBuffer
 {
   mat4 bone_mats[];
 };
 
+mat4 getTranslationMatrix(uint index) {
+  return mat4(
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    trs_data[index].translation[0], trs_data[index].translation[1], trs_data[index].translation[2], 1.0
+  );
+}
+
+mat4 getScaleMatrix(uint index) {
+  return mat4(
+    trs_data[index].scale[0], 0.0, 0.0, 0.0,
+    0.0, trs_data[index].scale[1], 0.0, 0.0,
+    0.0, 0.0, trs_data[index].scale[2], 0.0,
+    0.0, 0.0, 0.0, 1.0
+ );
+}
+
+mat4 getRotationMatrix(uint index) {
+  vec4 q = trs_data[index].rotation;
+
+  /* this is mat3_cast from GLM */
+  float qxx = q.x * q.x;
+  float qyy = q.y * q.y;
+  float qzz = q.z * q.z;
+  float qxz = q.x * q.z;
+  float qxy = q.x * q.y;
+  float qyz = q.y * q.z;
+  float qwx = q.w * q.x;
+  float qwy = q.w * q.y;
+  float qwz = q.w * q.z;
+
+  return mat4(
+    1.0 - 2.0 * (qyy + qzz),       2.0 * (qxy + qwz),       2.0 * (qxz - qwy), 0.0,
+          2.0 * (qxy - qwz), 1.0 - 2.0 * (qxx + qzz),       2.0 * (qyz + qwx), 0.0,
+          2.0 * (qxz + qwy),       2.0 * (qyz - qwx), 1.0 - 2.0 * (qxx + qyy), 0.0,
+          0.0,                     0.0,                     0.0,               1.0);
+}
 
 
 void main()
 {
-  
-  bone_mats[gl_GlobalInvocationID.x] = anim_bone_mat[gl_GlobalInvocationID.x] * inv_bone_mat[gl_GlobalInvocationID.x];
+  uint index = gl_GlobalInvocationID.x;
+  if(index >= bone_mats.length())
+    {
+      return;
+    }
+
+  mat4 animation_mat = getTranslationMatrix(index) * getRotationMatrix(index) * getScaleMatrix(index);
+  bone_mats[index] = animation_mat * inv_bone_mat[index];
 }
