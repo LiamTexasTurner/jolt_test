@@ -4,15 +4,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-struct transform_penis
+struct TRS
 {
-      glm::vec3 translation;
+      glm::vec4 translation;
       glm::quat rotation;
-      glm::vec3 scale;
+      glm::vec4 scale;
 };
-struct trs
-{
-      glm::vec4 t;
-      glm::vec4 r;
-      glm::vec4 s;
-};
+

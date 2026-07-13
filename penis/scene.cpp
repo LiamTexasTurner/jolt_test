@@ -839,9 +839,9 @@ void LoadAnimation(Scene& scene, const std::string& filename, std::vector<uint32
                                                &scale);
                         }
 
-                        scene_animation.frame_poses[j][k] = transform_penis{.translation = translation,
-                                                                            .rotation = rotation,
-                                                                            .scale = scale};
+                        scene_animation.frame_poses[j][k] = TRS{glm::vec4(translation, 1.0f),
+                                                                glm::quat(rotation),
+                                                                glm::vec4(scale, 1.0f)}; 
                   }
             }
       }
@@ -879,9 +879,9 @@ uint32_t LoadSkeleton(Scene& scene, cgltf_skin* skin)
 
             glm::decompose(world_mat, scale, rotation, translation, skew, perspective);
 
-            new_skeleton.bind_pose[i].translation = translation;
+            new_skeleton.bind_pose[i].translation = glm::vec4(translation, 1.0f);
             new_skeleton.bind_pose[i].rotation = rotation;
-            new_skeleton.bind_pose[i].scale = scale;
+            new_skeleton.bind_pose[i].scale = glm::vec4(scale, 1.0f);
       }
 
       glGenBuffers(1, &new_skeleton.inv_bind_pose_SSBO);
@@ -905,7 +905,7 @@ uint32_t LoadSkeleton(Scene& scene, cgltf_skin* skin)
 
       {
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, new_skeleton.anim_trs_SSBO);
-            GLsizeiptr buffer_size = sizeof(trs) * new_skeleton.bone_count;
+            GLsizeiptr buffer_size = sizeof(TRS) * new_skeleton.bone_count;
             glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);      
       }

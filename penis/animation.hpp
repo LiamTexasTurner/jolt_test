@@ -6,5 +6,5 @@
 #include <string>
 
 
-void FK(std::span<const BoneInfo> bones, std::span<transform_penis> out_pose);
+void FK(std::span<const BoneInfo> bones, std::span<TRS> out_pose);
 

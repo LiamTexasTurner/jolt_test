@@ -74,7 +74,7 @@ struct BoneInfo
 struct Animation
 {
       std::string name;
-      std::vector<std::vector<transform_penis>> frame_poses;
+      std::vector<std::vector<TRS>> frame_poses;
       uint32_t skeleton_ID;
       int frame_count;
 };
@@ -82,7 +82,7 @@ struct Animation
 struct Skeleton
 {
       std::vector<BoneInfo> bone_info;
-      std::vector<transform_penis> bind_pose;
+      std::vector<TRS> bind_pose;
       std::vector<glm::mat4> inv_bind_mats;
       std::string name;
       GLuint bone_transform_SSBO;
