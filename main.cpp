@@ -123,7 +123,7 @@ int main()
             std::cout << "Failed to initialize GLAD" << std::endl;
             return -1;
       }
-
+      
       glfwSwapInterval(0);
 
 
@@ -210,7 +210,7 @@ int main()
 
             ImGui::PushFont(nullptr, 28.0f);
 
-            ImGui::Text("%f", delta_time);
+            ImGui::Text("%f", 1.0f / delta_time);
 
             ImGui::PopFont();
 

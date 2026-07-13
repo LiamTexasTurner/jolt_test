@@ -486,17 +486,7 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             
             FK(skeleton->bone_info, pose);
 
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_INV_BIND_POSE_BINDING, skeleton->inv_bind_pose_SSBO);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, skeleton->bone_transform_SSBO);
-            
-            GLsizeiptr buffer_size = sizeof(TRS) * skeleton->bone_count;
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, skeleton->anim_trs_SSBO);
-            glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, buffer_size, pose.data());
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_TRS_BINDING, skeleton->anim_trs_SSBO);      
-            
-            glUseProgram(*m_skin_compute);
-            glDispatchCompute((skeleton->bone_count + SKINNING_GROUP_SIZE_X - 1) / SKINNING_GROUP_SIZE_X, 1, 1);
-            glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+            DeformMeshGPU(skeleton, pose, m_skin_compute);            
             
             Transform* transform = &m_scene->transforms[instance->transform_ID];
             transform->scale = glm::vec3(1.0f);
@@ -512,6 +502,7 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
             glUniformMatrix4fv(SCENE_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
             glUniformMatrix4fv(SCENE_PROJECTON_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, skeleton->bone_transform_SSBO);
             
             glBindVertexArray(skinned_mesh->mesh_VAO);
             for(size_t mesh_draw_index = 0; mesh_draw_index < skinned_mesh->draw_commands.size(); mesh_draw_index++)
