@@ -19,6 +19,7 @@
 #include "penis/renderer.hpp"
 #include "penis/game_mode.hpp"
 #include "penis/input.hpp"
+#include "penis/job_system.h"
 
 
 
@@ -44,7 +45,7 @@ double delta_time = 0.0;
 
 int main()
 {
-
+      JobSystem::Initialize();
       glfwInit();
       glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
       glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);

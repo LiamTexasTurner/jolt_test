@@ -18,6 +18,7 @@ add_executable(SceneRenderer
   penis/entity.cpp
   penis/skybox.cpp
   penis/animation.cpp
+  penis/job_system.cpp
 
   c:/imgui/imgui.cpp
   c:/imgui/imgui_demo.cpp

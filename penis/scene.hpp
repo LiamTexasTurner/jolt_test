@@ -16,6 +16,7 @@
 #include <span>
 #include <string>
 #include <map>
+#include <unordered_map>
 
 struct DrawCommand
 {
@@ -166,23 +167,21 @@ struct stb_image_data
 
 struct MeshData
 {
-      std::vector<uint32_t> material_IDs;
+      std::unordered_map<std::string, uint32_t> material_map_cache;
       std::vector<DrawCommand> draw_commands;
-      std::vector<Material> materials;
+      std::vector<stb_image_data> images;
       std::vector<float> positions;
       std::vector<float> tex_coords;
       std::vector<float> normals;
       std::vector<uint32_t> indices;
-      std::vector<stb_image_data> images;
-
-      std::map<std::string, uint32_t> material_map_cache;
+      std::vector<uint32_t> material_IDs;
 
       GLuint index_count;
       GLuint vertex_count;
 };
       
 void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filename);
-void UpdloadMesh(Scene& scene, MeshData& mesh_data, std::vector<uint32_t>* load_mesh_IDs);
+uint32_t UpdloadMesh(Scene& scene, MeshData& mesh_data);
 
 
 void LoadSkinnedMeshes(Scene& scene, const std::string& filename, std::vector<uint32_t>* load_mesh_IDs);

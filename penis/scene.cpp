@@ -233,13 +233,12 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
                                     .name = mat->name
                               };
                               mesh_result.images.push_back(image_data);
-
-                              uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(DiffuseMap{});
-                              new_material.diffuse_map_ID = new_diffuse_map_ID;
-                              uint32_t new_material_ID = scene.materials.insert(new_material);
-                              mesh_result.material_map_cache.emplace(mat->name, new_material_ID);
                         }
                   }
+                  uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(DiffuseMap{});
+                  new_material.diffuse_map_ID = new_diffuse_map_ID;
+                  uint32_t new_material_ID = scene.materials.insert(new_material);
+                  mesh_result.material_map_cache.emplace(mat->name, new_material_ID);
             }
       }       
 
@@ -336,7 +335,7 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
 
 }
 
-void UpdloadMesh(Scene& scene, MeshData& mesh_data, std::vector<uint32_t>* load_mesh_IDs)
+uint32_t UpdloadMesh(Scene& scene, MeshData& mesh_data)
 {
       Mesh mesh_result;
       mesh_result.vertex_count = mesh_data.vertex_count;
@@ -370,8 +369,6 @@ void UpdloadMesh(Scene& scene, MeshData& mesh_data, std::vector<uint32_t>* load_
                   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
                   
-
-                  
                   auto it = mesh_data.material_map_cache.find(image_data.name);
                   if(it != mesh_data.material_map_cache.end())
                   {                        
@@ -382,7 +379,7 @@ void UpdloadMesh(Scene& scene, MeshData& mesh_data, std::vector<uint32_t>* load_
             }
             else
             {
-            
+                  assert(false && "failed to load texture");
             }
             
             stbi_image_free(image_data.data);
@@ -420,10 +417,8 @@ void UpdloadMesh(Scene& scene, MeshData& mesh_data, std::vector<uint32_t>* load_
       glBindBuffer(GL_ARRAY_BUFFER, 0);
 
       uint32_t new_mesh_ID = scene.meshes.insert(mesh_result);
-      if(load_mesh_IDs)
-      {
-            load_mesh_IDs->push_back(new_mesh_ID);
-      }
+
+      return new_mesh_ID;
       
 }
 
