@@ -260,16 +260,20 @@ void PRenderer::CreateDrawList()
                   const Mesh& mesh = m_scene->meshes[instance.mesh_ID];
                   for(int mesh_draw_index = 0; mesh_draw_index < mesh.draw_commands.size(); mesh_draw_index++)
                   {
-                        const Material& material = m_scene->materials[mesh.material_IDs[mesh_draw_index]];
-                        const DiffuseMap& diffuse_map = m_scene->diffuse_maps[material.diffuse_map_ID];
-                        if(diffuse_map.has_transparency)
+                        if(mesh.material_IDs.size() > 0)
                         {
-                              transparent_draw_list.push_back(instance_ID);
+                              const Material& material = m_scene->materials[mesh.material_IDs[mesh_draw_index]];
+                              const DiffuseMap& diffuse_map = m_scene->diffuse_maps[material.diffuse_map_ID];
+                              if(diffuse_map.has_transparency)
+                              {
+                                    transparent_draw_list.push_back(instance_ID);
+                              }
+                              else
+                              {
+                                    opaque_draw_list.push_back(instance_ID);
+                              }
                         }
-                        else
-                        {
-                              opaque_draw_list.push_back(instance_ID);
-                        }
+                        
                   }
             }
             if(m_scene->skinned_meshes.contains(instance.skinned_mesh_ID))

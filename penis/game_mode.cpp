@@ -38,17 +38,33 @@ public:
             vector<uint32_t> loaded_mesh_IDs;
 
             loaded_mesh_IDs.clear();
-            LoadMeshes(*m_scene, "../resources/chips_2/chips_2.gltf", &loaded_mesh_IDs);
+            MeshData mesh_result;
+            LoadMeshAsync(*m_scene, mesh_result, "../resources/chips_2/chips_2.gltf");
+            UpdloadMesh(*m_scene, mesh_result, &loaded_mesh_IDs);
             for(uint32_t loaded_mesh_ID : loaded_mesh_IDs)
             {
                   {
                         uint32_t new_instance_ID;
                         AddMeshInstance(*scene, loaded_mesh_ID, &new_instance_ID);
                         uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-                        scene->transforms[new_instance_ID].translation = glm::vec3(1,-0.1,0);
+                        scene->transforms[new_instance_ID].translation = glm::vec3(0,1,0);
                         scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
                         entities.emplace_back(Entity(new_instance_ID));
                   }
+            }
+
+            // loaded_mesh_IDs.clear();
+            // LoadMeshes(*m_scene, "../resources/chips_2/chips_2.gltf", &loaded_mesh_IDs);
+            // for(uint32_t loaded_mesh_ID : loaded_mesh_IDs)
+            // {
+            //       {
+            //             uint32_t new_instance_ID;
+            //             AddMeshInstance(*scene, loaded_mesh_ID, &new_instance_ID);
+            //             uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
+            //             scene->transforms[new_instance_ID].translation = glm::vec3(1,-0.1,0);
+            //             scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
+            //             entities.emplace_back(Entity(new_instance_ID));
+            //       }
                   // {
                   //       uint32_t new_instance_ID;
                   //       AddMeshInstance(*scene, loaded_mesh_ID, &new_instance_ID);
@@ -58,31 +74,31 @@ public:
                   //       entities.emplace_back(Entity(new_instance_ID));
                   // }
                   
-            }
+            //}
       
-            loaded_mesh_IDs.clear();
-            LoadSkinnedMeshes(*m_scene, "../resources/chips_2/chips_2.gltf", &loaded_mesh_IDs);
-            for(uint32_t loaded_mesh_ID : loaded_mesh_IDs)
-            {
-                  {
-                        uint32_t new_instance_ID;
-                        AddSkinnedMeshInstance(*scene, loaded_mesh_ID, &new_instance_ID);
-                        uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-                        scene->transforms[new_instance_ID].translation = glm::vec3(0,-0.1,0);
-                        scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
-                        entities.emplace_back(Entity(new_instance_ID));
-                  }
+            // loaded_mesh_IDs.clear();
+            // LoadSkinnedMeshes(*m_scene, "../resources/chips_2/chips_2.gltf", &loaded_mesh_IDs);
+            // for(uint32_t loaded_mesh_ID : loaded_mesh_IDs)
+            // {
+            //       {
+            //             uint32_t new_instance_ID;
+            //             AddSkinnedMeshInstance(*scene, loaded_mesh_ID, &new_instance_ID);
+            //             uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
+            //             scene->transforms[new_instance_ID].translation = glm::vec3(0,-0.1,0);
+            //             scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
+            //             entities.emplace_back(Entity(new_instance_ID));
+            //       }
 
-                  for(int i = 0; i < 10; i++)
-                  {
-                        uint32_t new_instance_ID;
-                        AddSkinnedMeshInstance(*scene, loaded_mesh_ID, &new_instance_ID);
-                        uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-                        scene->transforms[new_instance_ID].translation = glm::vec3(i,-0.1,0);
-                        scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
-                        entities.emplace_back(Entity(new_instance_ID));      
-                  }
-            }
+            //       for(int i = 0; i < 10; i++)
+            //       {
+            //             uint32_t new_instance_ID;
+            //             AddSkinnedMeshInstance(*scene, loaded_mesh_ID, &new_instance_ID);
+            //             uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
+            //             scene->transforms[new_instance_ID].translation = glm::vec3(i,-0.1,0);
+            //             scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
+            //             entities.emplace_back(Entity(new_instance_ID));      
+            //       }
+            // }
 
             
 
@@ -129,9 +145,9 @@ public:
             //       }
             // }
 
-            vector<uint32_t> animation_IDs;
-            animation_IDs.clear();
-            LoadAnimation(*m_scene, "../resources/chips_2/chips_2.gltf", &animation_IDs);
+            // vector<uint32_t> animation_IDs;
+            // animation_IDs.clear();
+            // LoadAnimation(*m_scene, "../resources/chips_2/chips_2.gltf", &animation_IDs);
 
             
 

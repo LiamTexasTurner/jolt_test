@@ -42,7 +42,7 @@ bool get_pose_at_time(cgltf_interpolation_type interpolationType, cgltf_accessor
             }
       }
 
-    
+      
 
       float duration = fmaxf((tend - tstart), EPSILON);
       float t = (time - tstart)/duration;
@@ -187,6 +187,246 @@ void Scene::Init()
       
 }
 
+void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filename)
+{
+      cgltf_options options{};
+      cgltf_data* data = nullptr;
+      string directory = filename.substr(0, filename.find_last_of('/'));
+
+      if(cgltf_parse_file(&options, filename.c_str(), &data) != cgltf_result_success)
+      {
+            cout << "failed to load mesh" << endl;
+      }
+      if(cgltf_load_buffers(&options, data, filename.c_str()) != cgltf_result_success)
+      {
+            cout << "failed to load mesh buffers" << endl;
+      }
+
+      for(int i = 0; i < data->materials_count; i++)
+      {
+            cgltf_material* mat = &data->materials[i];
+            
+            Material new_material;
+            new_material.name = mat->name;
+            
+            if(mat->has_pbr_metallic_roughness)
+            {
+                  cgltf_texture_view* base_color = &mat->pbr_metallic_roughness.base_color_texture;                 
+                  if(base_color->texture)
+                  {
+                        cgltf_texture* tex = base_color->texture;
+                        if(tex->image)
+                        {
+                              cgltf_image* image = tex->image;
+                              const char* uri = image->uri;
+                              std::string image_filename = std::string(uri);
+                              image_filename = directory + '/' + image_filename;
+                              int width, height, nrComponents;
+
+                              unsigned char* data = stbi_load(image_filename.c_str(), &width, &height, &nrComponents, 0);
+                              stb_image_data image_data
+                              {
+                                    .data = data,
+                                    .width = width,
+                                    .height = height,
+                                    .nrComponents = nrComponents,
+                                    .name = mat->name
+                              };
+                              mesh_result.images.push_back(image_data);
+
+                              uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(DiffuseMap{});
+                              new_material.diffuse_map_ID = new_diffuse_map_ID;
+                              uint32_t new_material_ID = scene.materials.insert(new_material);
+                              mesh_result.material_map_cache.emplace(mat->name, new_material_ID);
+                        }
+                  }
+            }
+      }       
+
+      for(int i = 0; i < data->nodes_count; i++)
+      {
+            cgltf_node *node = &(data->nodes[i]);
+            cgltf_mesh *mesh = node->mesh;
+            if(!mesh) continue;
+
+            for(int prim_index = 0; prim_index < mesh->primitives_count; prim_index++)
+            {
+                  cgltf_primitive* primitive = &mesh->primitives[prim_index];
+
+                  if(primitive->type != cgltf_primitive_type_triangles)
+                  {
+                        continue;
+                  }
+
+                  uint32_t base_vertex = 0;
+                  uint32_t vertex_count = 0;
+                  for(int attrib_index = 0; attrib_index < primitive->attributes_count; attrib_index++)
+                  {
+                        if(primitive->attributes[attrib_index].type == cgltf_attribute_type_position)
+                        {
+                              cgltf_accessor* attribute = primitive->attributes[attrib_index].data;
+                              base_vertex = static_cast<uint32_t>(mesh_result.positions.size() / 3);
+                              vertex_count = static_cast<uint32_t>(attribute->count);
+                              
+                              vector<float> primitive_positions(vertex_count * 3);
+
+                              load_attribute(attribute, 3, primitive_positions);
+
+                              mesh_result.positions.insert(mesh_result.positions.end(), primitive_positions.begin(), primitive_positions.end());
+                        }
+                        if(primitive->attributes[attrib_index].type == cgltf_attribute_type_texcoord)
+                        {
+                              cgltf_accessor* attribute = primitive->attributes[attrib_index].data;
+                              vector<float> prim_tex_coords(attribute->count * 2);
+                              load_attribute(attribute, 2, prim_tex_coords);
+
+                              mesh_result.tex_coords.insert(mesh_result.tex_coords.end(), prim_tex_coords.begin(), prim_tex_coords.end());     
+                        }
+                        if(primitive->attributes[attrib_index].type == cgltf_attribute_type_normal)
+                        {
+                              cgltf_accessor* attribute = primitive->attributes[attrib_index].data;
+                              vector<float> prim_normals(attribute->count * 3);
+                              load_attribute(attribute, 3, prim_normals);
+                              mesh_result.normals.insert(mesh_result.normals.end(), prim_normals.begin(), prim_normals.end());
+                        }
+
+                  }
+
+                  uint32_t first_index = static_cast<uint32_t>(mesh_result.indices.size());
+
+                  if(primitive->indices)
+                  {
+                        cgltf_accessor* index_accessor = primitive->indices;
+
+                        for(int index = 0; index < index_accessor->count; index++)
+                        {
+                              uint32_t local_index = static_cast<uint32_t>(cgltf_accessor_read_index(index_accessor, index));
+
+                              mesh_result.indices.push_back(base_vertex + local_index);
+                        }
+
+                        DrawCommand curr_draw_cmd{};
+                        
+                        curr_draw_cmd.gl_draw_ele_cmd.count = static_cast<GLuint>(index_accessor->count);
+                        curr_draw_cmd.gl_draw_ele_cmd.primCount = 1;
+                        curr_draw_cmd.gl_draw_ele_cmd.firstIndex = first_index;
+                        curr_draw_cmd.gl_draw_ele_cmd.baseVertex = 0;
+                        curr_draw_cmd.gl_draw_ele_cmd.baseInstance = 0;
+                        curr_draw_cmd.has_transparecny = false;
+                        mesh_result.draw_commands.push_back(curr_draw_cmd);
+
+                        auto it = mesh_result.material_map_cache.find(primitive->material->name);
+                        if(it != mesh_result.material_map_cache.end())
+                        {
+                              mesh_result.material_IDs.push_back(it->second);
+                        }                     
+                  }             
+            }            
+            break;
+      }
+      if(mesh_result.positions.empty() || mesh_result.indices.empty())
+      {
+            cout << "glTF contains no triangle geometry" << endl;
+            cgltf_free(data);
+            return;
+      }
+
+      mesh_result.vertex_count = static_cast<GLuint>(mesh_result.positions.size() / 3);
+      mesh_result.index_count = static_cast<GLuint>(mesh_result.indices.size());
+
+}
+
+void UpdloadMesh(Scene& scene, MeshData& mesh_data, std::vector<uint32_t>* load_mesh_IDs)
+{
+      Mesh mesh_result;
+      mesh_result.vertex_count = mesh_data.vertex_count;
+      mesh_result.index_count = mesh_data.index_count;
+      mesh_result.draw_commands = mesh_data.draw_commands;
+      mesh_result.material_IDs = mesh_data.material_IDs;
+
+
+      for(auto& image_data : mesh_data.images)
+      {
+            if(image_data.data)
+            {
+
+                  GLuint texture_ID;
+                  glGenTextures(1, &texture_ID);
+                  GLenum format;
+                  if (image_data.nrComponents == 1)
+                        format = GL_RED;
+                  else if (image_data.nrComponents == 3)
+                        format = GL_RGB;
+                  else if (image_data.nrComponents == 4)
+                        format = GL_RGBA;
+      
+                  glBindTexture(GL_TEXTURE_2D, texture_ID);
+                  glTexImage2D(GL_TEXTURE_2D, 0, format, image_data.width, image_data.height, 0, format, GL_UNSIGNED_BYTE, image_data.data);
+                  glGenerateMipmap(GL_TEXTURE_2D);
+
+                  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+                  
+
+                  
+                  auto it = mesh_data.material_map_cache.find(image_data.name);
+                  if(it != mesh_data.material_map_cache.end())
+                  {                        
+                        const Material* mat = &scene.materials[it->second];
+                        scene.diffuse_maps[mat->diffuse_map_ID].DiffuseMapTO = texture_ID;
+                  }
+
+            }
+            else
+            {
+            
+            }
+            
+            stbi_image_free(image_data.data);
+      }
+
+      
+
+      glGenVertexArrays(1, &mesh_result.mesh_VAO);
+      glGenBuffers(1, &mesh_result.postion_BO);
+      glGenBuffers(1, &mesh_result.tex_coord_BO);
+      glGenBuffers(1, &mesh_result.normal_BO);
+      glGenBuffers(1, &mesh_result.index_BO);
+
+      glBindVertexArray(mesh_result.mesh_VAO);
+
+      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.postion_BO);
+      glBufferData(GL_ARRAY_BUFFER, mesh_data.positions.size() * sizeof(float), mesh_data.positions.data(), GL_STATIC_DRAW);
+      glVertexAttribPointer(SCENE_POSITION_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
+      glEnableVertexAttribArray(SCENE_POSITION_ATTRIB_LOCATION);
+
+      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.tex_coord_BO);
+      glBufferData(GL_ARRAY_BUFFER, mesh_data.tex_coords.size() * sizeof(mesh_data.tex_coords[0]), mesh_data.tex_coords.data(), GL_STATIC_DRAW);
+      glVertexAttribPointer(SCENE_TEXCOORD_ATTRIB_LOCATION, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
+      glEnableVertexAttribArray(SCENE_TEXCOORD_ATTRIB_LOCATION);
+
+      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.normal_BO);
+      glBufferData(GL_ARRAY_BUFFER, mesh_data.normals.size() * sizeof(mesh_data.normals[0]), mesh_data.normals.data(), GL_STATIC_DRAW);
+      glVertexAttribPointer(SCENE_NORMAL_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
+      glEnableVertexAttribArray(SCENE_NORMAL_ATTRIB_LOCATION);
+
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_result.index_BO);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh_data.indices.size() * sizeof(uint32_t), mesh_data.indices.data(), GL_STATIC_DRAW);
+
+      glBindVertexArray(0);
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+      uint32_t new_mesh_ID = scene.meshes.insert(mesh_result);
+      if(load_mesh_IDs)
+      {
+            load_mesh_IDs->push_back(new_mesh_ID);
+      }
+      
+}
+
 void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mesh_IDs)
 {
       Mesh mesh_result{};
@@ -299,7 +539,7 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
                               cgltf_accessor* attribute = primitive->attributes[attrib_index].data;
                               base_vertex = static_cast<uint32_t>(positions.size() / 3);
                               vertex_count = static_cast<uint32_t>(attribute->count);
-      
+                              
                               vector<float> primitive_positions(vertex_count * 3);
 
                               load_attribute(attribute, 3, primitive_positions);
@@ -392,7 +632,7 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
       glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(normals[0]), normals.data(), GL_STATIC_DRAW);
       glVertexAttribPointer(SCENE_NORMAL_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
       glEnableVertexAttribArray(SCENE_NORMAL_ATTRIB_LOCATION);
-     
+      
 
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_result.index_BO);
       glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
@@ -529,7 +769,7 @@ void LoadSkinnedMeshes(Scene &scene, const string &filename, vector<uint32_t> *l
                               cgltf_accessor* attribute = primitive->attributes[attrib_index].data;
                               base_vertex = static_cast<uint32_t>(positions.size() / 3);
                               vertex_count = static_cast<uint32_t>(attribute->count);
-      
+                              
                               vector<float> primitive_positions(vertex_count * 3);
 
                               load_attribute(attribute, 3, primitive_positions);
@@ -622,7 +862,7 @@ void LoadSkinnedMeshes(Scene &scene, const string &filename, vector<uint32_t> *l
             else
             {
                   skeleton_ID = LoadSkeleton(scene, skin);
-                        
+                  
             }
             skinned_mesh_result.skeleton_ID = skeleton_ID;
       }
@@ -720,7 +960,7 @@ void LoadAnimation(Scene& scene, const std::string& filename, std::vector<uint32
             cgltf_animation_channel *scale;
             cgltf_interpolation_type interpolationType;
       };
-                  
+      
       cgltf_skin* skin = &data->skins[0];
       if(data->skins_count <= 0) return;      
       uint32_t skeleton_ID = 0;
@@ -804,12 +1044,12 @@ void LoadAnimation(Scene& scene, const std::string& filename, std::vector<uint32
                         glm::vec3 translation = glm::vec3(skin->joints[k]->translation[0],
                                                           skin->joints[k]->translation[1],
                                                           skin->joints[k]->translation[2]);
-                                    
+                        
                         glm::quat rotation = glm::quat(skin->joints[k]->rotation[0],
                                                        skin->joints[k]->rotation[1],
                                                        skin->joints[k]->rotation[2],
                                                        skin->joints[k]->rotation[3]);
-                                    
+                        
                         glm::vec3 scale = glm::vec3(skin->joints[k]->scale[0],
                                                     skin->joints[k]->scale[1],
                                                     skin->joints[k]->scale[2]);
@@ -909,15 +1149,15 @@ uint32_t LoadSkeleton(Scene& scene, cgltf_skin* skin)
             glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);      
       }
-             
+      
       {
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, new_skeleton.bone_transform_SSBO);
             GLsizeiptr buffer_size = sizeof(glm::mat4) * new_skeleton.bone_count;
             glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);      
       }
-            
-                                          
+      
+      
       uint32_t new_skeleton_ID = scene.skeletons.insert(new_skeleton);
       scene.skeleton_skinned_mesh_map.emplace(string(skin->name), new_skeleton_ID);
 
@@ -1039,3 +1279,5 @@ unsigned int texture_from_file(std::string uri, const std::string &directory, bo
       return textureID;
 }
 
+
+      

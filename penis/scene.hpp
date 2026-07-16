@@ -21,6 +21,7 @@ struct DrawCommand
 {
       GLDrawElementsIndirectCommand gl_draw_ele_cmd;
       bool has_transparecny = false;
+      uint32_t material_ID;
 };
 
 struct DiffuseMap
@@ -153,6 +154,36 @@ public:
 };
 
 void LoadMeshes(Scene& scene, const std::string& filename, std::vector<uint32_t>* load_mesh_IDs);
+
+struct stb_image_data
+{
+      unsigned char* data;
+      int width;
+      int height;
+      int nrComponents;
+      std::string name;
+};
+
+struct MeshData
+{
+      std::vector<uint32_t> material_IDs;
+      std::vector<DrawCommand> draw_commands;
+      std::vector<Material> materials;
+      std::vector<float> positions;
+      std::vector<float> tex_coords;
+      std::vector<float> normals;
+      std::vector<uint32_t> indices;
+      std::vector<stb_image_data> images;
+
+      std::map<std::string, uint32_t> material_map_cache;
+
+      GLuint index_count;
+      GLuint vertex_count;
+};
+      
+void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filename);
+void UpdloadMesh(Scene& scene, MeshData& mesh_data, std::vector<uint32_t>* load_mesh_IDs);
+
 
 void LoadSkinnedMeshes(Scene& scene, const std::string& filename, std::vector<uint32_t>* load_mesh_IDs);
 
