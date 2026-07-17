@@ -178,7 +178,7 @@ struct MeshData
       
 void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filename);
 
-uint32_t UpdloadMesh(Scene& scene, MeshData& mesh_data);
+uint32_t UploadMesh(Scene& scene, MeshData& mesh_data);
 
 void LoadMeshes(Scene& scene, const std::string& filename, std::vector<uint32_t>* load_mesh_IDs);
 

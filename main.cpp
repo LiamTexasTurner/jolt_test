@@ -148,7 +148,6 @@ int main()
 
       renderer->Resize(SCR_WIDTH, SCR_HEIGHT);
 
-      //Gamemode
       IGameMode* game_mode = NewGameMode();
       game_mode->Init(&scene, window, renderer);
       

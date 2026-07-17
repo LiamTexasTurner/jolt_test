@@ -327,7 +327,7 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
 
 }
 
-uint32_t UpdloadMesh(Scene& scene, MeshData& mesh_data)
+uint32_t UploadMesh(Scene& scene, MeshData& mesh_data)
 {
       Mesh mesh_result;
       mesh_result.vertex_count = mesh_data.vertex_count;
@@ -339,8 +339,6 @@ uint32_t UpdloadMesh(Scene& scene, MeshData& mesh_data)
       for(auto mat_info : mesh_data.material_file_info)
       {           
             GLuint texture_ID = create_texture(mat_info.file_path.c_str());
-            
-            
             auto it = mesh_data.material_map_cache.find(mat_info.material_name);
             if(it != mesh_data.material_map_cache.end())
             {                        
@@ -348,8 +346,6 @@ uint32_t UpdloadMesh(Scene& scene, MeshData& mesh_data)
                   scene.diffuse_maps[mat->diffuse_map_ID].DiffuseMapTO = texture_ID;
             }
       }
-      
-
       
       glGenVertexArrays(1, &mesh_result.mesh_VAO);
       glGenBuffers(1, &mesh_result.postion_BO);
@@ -1358,9 +1354,6 @@ GLuint create_texture(char const* Filename)
 		default: assert(0); break;
 		}
 	}
-      glTexParameteri(Target, GL_TEXTURE_WRAP_S, GL_REPEAT);
-      glTexParameteri(Target, GL_TEXTURE_WRAP_T, GL_REPEAT);
-      glTexParameteri(Target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-      glTexParameteri(Target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+     
 	return TextureName;
 }

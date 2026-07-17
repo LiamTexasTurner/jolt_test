@@ -40,12 +40,12 @@ public:
             MeshData chips_mesh_result;
             JobSystem::Execute([&]{LoadMeshAsync(*m_scene, chips_mesh_result, "d:/OpenGLPractice/SceneRenderer/resources/chips_2/chips_2.gltf");});
             
-            // MeshData delta_mesh_result;
-            // JobSystem::Execute([&]{LoadMeshAsync(*m_scene, delta_mesh_result, "../resources/delta/delta.gltf");});
+            MeshData delta_mesh_result;
+            JobSystem::Execute([&]{LoadMeshAsync(*m_scene, delta_mesh_result, "../resources/delta/delta.gltf");});
             
             JobSystem::Wait();
             
-            uint32_t chips_ID = UpdloadMesh(*m_scene, chips_mesh_result);
+            uint32_t chips_ID = UploadMesh(*m_scene, chips_mesh_result);
             {
                   uint32_t new_instance_ID;
                   AddMeshInstance(*scene, chips_ID, &new_instance_ID);
@@ -55,17 +55,16 @@ public:
                   entities.emplace_back(Entity(new_instance_ID));
             }
 
-            // uint32_t delta_ID = UpdloadMesh(*m_scene, delta_mesh_result);
-            // {
-            //       uint32_t new_instance_ID;
-            //       AddMeshInstance(*scene, delta_ID, &new_instance_ID);
-            //       uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-            //       scene->transforms[new_instance_ID].translation = glm::vec3(0,0,0);
-            //       scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
-            //       entities.emplace_back(Entity(new_instance_ID));
-            // }
+            uint32_t delta_ID = UploadMesh(*m_scene, delta_mesh_result);
+            {
+                  uint32_t new_instance_ID;
+                  AddMeshInstance(*scene, delta_ID, &new_instance_ID);
+                  uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
+                  scene->transforms[new_instance_ID].translation = glm::vec3(0,0,0);
+                  scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
+                  entities.emplace_back(Entity(new_instance_ID));
+            }
 
-      
             // vector<uint32_t> loaded_mesh_IDs;
             // LoadMeshes(*m_scene, "../resources/delta/delta.gltf", &loaded_mesh_IDs);
             // for(uint32_t loaded_mesh_ID : loaded_mesh_IDs)
@@ -76,13 +75,6 @@ public:
             //       scene->transforms[new_instance_ID].translation = glm::vec3(0,0,0);
             //       scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
             // }
-
-
-            
-
-            
-            
-            
 
             // LoadMeshes(*m_scene, "../resources/delta/delta.gltf", &loaded_mesh_IDs);
 
