@@ -64,6 +64,8 @@ struct Material
       GLuint ORM;
       
       float base_color[4];
+
+      bool has_diffuse_map = false;
       
       uint32_t diffuse_map_ID;
       uint32_t normal_map_ID;
@@ -144,9 +146,9 @@ struct Transform
 
 struct Instance
 {
-      uint32_t transform_ID;
-      uint32_t mesh_ID;
-      uint32_t skinned_mesh_ID;
+      uint32_t transform_ID = 0;
+      uint32_t mesh_ID = 0;
+      uint32_t skinned_mesh_ID = 0;
 };
 
 struct Opaque

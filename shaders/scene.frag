@@ -8,7 +8,7 @@ layout(location = SCENE_CAMERAPOS_UNIFORM_LOCATION)
 uniform vec3 CameraPos;
 
 layout(location = SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION)
-uniform int HasDiffuseMap;
+uniform bool HasDiffuseMap;
 
 layout(location = SCENE_LIGHT_POS)
 uniform vec3 lightPos;
@@ -53,28 +53,40 @@ float shadowCalculation(vec4 fragPosLightSpace)
 void main()
 {
   vec2 diffuse_map_tex_coords = fTexCoord * tex_coord_scale + tex_coord_offset;
-  vec4 color = texture(DiffuseMap, diffuse_map_tex_coords);
-
-  if(color.a < 0.1)
-    discard;
   
-  vec3 normal = normalize(fWorldNormal);
+  vec4 color;
+  if(HasDiffuseMap)
+    {
+      color = texture(DiffuseMap, diffuse_map_tex_coords);
+            
+      if(color.a < 0.1)
+        discard;
+  
+      vec3 normal = normalize(fWorldNormal);
 
-  vec3 lightColor = vec3(0.6, 0.6, 0.6);
+      vec3 lightColor = vec3(0.6, 0.6, 0.6);
 
-  vec3 lightDir = normalize(lightPos);
+      vec3 lightDir = normalize(lightPos);
 
-  vec3 ambient = 0.3 * light_color;
+      vec3 ambient = 0.3 * light_color;
 
-  float diff = max(dot(lightDir, normal), 0.0);
-  vec3 diffuse = diff * light_color;
+      float diff = max(dot(lightDir, normal), 0.0);
+      vec3 diffuse = diff * light_color;
 
-  float shadow = shadowCalculation(fFragPosLightSpace);
+      float shadow = shadowCalculation(fFragPosLightSpace);
 
-  vec3 lighting = (ambient + (1.0 - shadow) * diffuse) * color.rgb;
+      vec3 lighting = (ambient + (1.0 - shadow) * diffuse) * color.rgb;
     
   
-  FragColor = vec4(lighting, 1.0);
+      FragColor = vec4(lighting, 1.0);
+
+    }
+  else
+    {
+      FragColor = vec4(1, 0, 1, 1.0);
+    }
+
+
   // FragColor = color;
 }
 

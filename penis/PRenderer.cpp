@@ -38,6 +38,7 @@ void PRenderer::Init(Scene* scene)
       glGenVertexArrays(1, &m_null_vao);
       glBindVertexArray(m_null_vao);
       glBindVertexArray(0);
+
 }
 
 void PRenderer::Resize(int width, int height) 
@@ -445,7 +446,7 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
                   glUniform2fv(SCENE_TEXCOORD_OFFSET, 1, value_ptr(material->offset));
 
                   glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
-                  if(material->diffuse_map_ID == -1)
+                  if(!material->has_diffuse_map)
                   {
                         glBindTexture(GL_TEXTURE_2D, 0);
                         glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 0);
@@ -614,7 +615,7 @@ void PRenderer::DrawTransparent(const glm::mat4& projection,
                   const Material* material = &m_scene->materials[mesh->material_IDs[mesh_draw_index]];
 
                   glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
-                  if(material->diffuse_map_ID == -1)
+                  if(!material->has_diffuse_map)
                   {
                         glBindTexture(GL_TEXTURE_2D, 0);
                         glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 0);

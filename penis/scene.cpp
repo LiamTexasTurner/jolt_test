@@ -189,6 +189,16 @@ void Scene::Init()
       instances      = packed_freelist<Instance>(4096);
       cameras        = packed_freelist<Camera>(32);
       skyboxes       = packed_freelist<Skybox>(32);
+
+      //defualts
+
+      // Material default_mat;
+      // default_mat.base_color[0] = 0.0f;
+      // default_mat.base_color[1] = 1.0f;
+      // default_mat.base_color[2] = 1.0f;
+      // default_mat.base_color[3] = 1.0f;
+      // default_mat.diffuse_map_ID = -1;
+      // materials.insert(default_mat);
       
 }
 
@@ -355,11 +365,12 @@ uint32_t UploadMesh(Scene& scene, MeshData& mesh_data)
                   GLuint texture_ID = create_texture(mat_info.file_path.c_str());
 
                   DiffuseMap new_diffuse_map;
-                  new_diffuse_map.DiffuseMapTO = texture_ID;
+                  new_diffuse_map.DiffuseMapTO = texture_ID;                  
                   new_diffuse_map.has_transparency = false;
                   uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(new_diffuse_map);
                        
                   Material new_material;
+                  new_material.has_diffuse_map = true;
                   new_material.diffuse_map_ID = new_diffuse_map_ID;
                   uint32_t new_material_ID = scene.materials.insert(new_material);
 
