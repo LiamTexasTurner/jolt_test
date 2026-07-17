@@ -7,9 +7,8 @@
 #include <sstream>
 #include <assert.h>
 
-
 #ifdef _WIN32
-// #define NOMINMAX
+#define NOMINMAX
 #include <Windows.h>
 #endif
 
@@ -83,39 +82,52 @@ namespace JobSystem
 
 		// Create all our worker threads while immediately starting them:
 		for (uint32_t threadID = 0; threadID < numThreads; ++threadID)
-            {
-                  std::thread worker([threadID]
-                  {
+		{
+			std::thread worker([] {
+
+				std::function<void()> job; // the current job for the thread, it's empty at start.
+
+										   // This is the infinite loop that a worker thread will do 
+				while (true)
+				{
+					if (jobPool.pop_front(job)) // try to grab a job from the jobPool queue
+					{
+						// It found a job, execute it:
+						job(); // execute job
+						finishedLabel.fetch_add(1); // update worker label state
+					}
+					else
+					{
+						// no job, put thread to sleep
+						std::unique_lock<std::mutex> lock(wakeMutex);
+						wakeCondition.wait(lock);
+					}
+				}
+
+			});
+
 #ifdef _WIN32
-                        DWORD_PTR affinityMask = DWORD_PTR{1} << threadID;
-                        DWORD_PTR affinityResult = SetThreadAffinityMask(GetCurrentThread(), affinityMask);
-      
-                        std::wstringstream wss;
-                        wss << L"JobSystem_" << threadID;
+			// Do Windows-specific thread setup:
+			HANDLE handle = (HANDLE)worker.native_handle();
 
-                        HRESULT hr = SetThreadDescription(GetCurrentThread(), wss.str().c_str());
-                        assert(SUCCEEDED(hr));
-#endif
+			// Put each thread on to dedicated core
+			DWORD_PTR affinityMask = 1ull << threadID;
+			DWORD_PTR affinity_result = SetThreadAffinityMask(handle, affinityMask);
+			assert(affinity_result > 0);
 
-                        std::function<void()> job;
+			//// Increase thread priority:
+			//BOOL priority_result = SetThreadPriority(handle, THREAD_PRIORITY_HIGHEST);
+			//assert(priority_result != 0);
 
-                        while (true)
-                        {
-                              if (jobPool.pop_front(job))
-                              {
-                                    job();
-                                    finishedLabel.fetch_add(1);
-                              }
-                              else
-                              {
-                                    std::unique_lock<std::mutex> lock(wakeMutex);
-                                    wakeCondition.wait(lock);
-                              }
-                        }
-                  });
+			// Name the thread:
+			std::wstringstream wss;
+			wss << "JobSystem_" << threadID;
+			HRESULT hr = SetThreadDescription(handle, wss.str().c_str());
+			assert(SUCCEEDED(hr));
+#endif // _WIN32
 
-                  worker.detach();
-            }
+			worker.detach(); // forget about this thread, let it do it's job in the infinite loop that we created above
+		}
 	}
 
 	// This little helper function will not let the system to be deadlocked while the main thread is waiting for something

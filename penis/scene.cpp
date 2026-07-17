@@ -1,13 +1,17 @@
+
 #include "scene.hpp"
 #include "preamble.glsl"
 
 #include "stb_image.h"
 #include "cgltf.h"
+#include "dds_loader.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <assert.h>
+#include <gli/gli.hpp>
 
+#include <filesystem>
 #include <span>
 #include <iostream>
 
@@ -219,20 +223,8 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
                         {
                               cgltf_image* image = tex->image;
                               const char* uri = image->uri;
-                              std::string image_filename = std::string(uri);
-                              image_filename = directory + '/' + image_filename;
-                              int width, height, nrComponents;
-
-                              unsigned char* data = stbi_load(image_filename.c_str(), &width, &height, &nrComponents, 0);
-                              stb_image_data image_data
-                              {
-                                    .data = data,
-                                    .width = width,
-                                    .height = height,
-                                    .nrComponents = nrComponents,
-                                    .name = mat->name
-                              };
-                              mesh_result.images.push_back(image_data);
+                              string file_path = directory + "/" + filesystem::path(uri).stem().string() + ".dds";
+                              mesh_result.material_file_info.emplace_back(mat->name, file_path);
                         }
                   }
                   uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(DiffuseMap{});
@@ -344,49 +336,21 @@ uint32_t UpdloadMesh(Scene& scene, MeshData& mesh_data)
       mesh_result.material_IDs = mesh_data.material_IDs;
 
 
-      for(auto& image_data : mesh_data.images)
-      {
-            if(image_data.data)
-            {
-
-                  GLuint texture_ID;
-                  glGenTextures(1, &texture_ID);
-                  GLenum format;
-                  if (image_data.nrComponents == 1)
-                        format = GL_RED;
-                  else if (image_data.nrComponents == 3)
-                        format = GL_RGB;
-                  else if (image_data.nrComponents == 4)
-                        format = GL_RGBA;
-      
-                  glBindTexture(GL_TEXTURE_2D, texture_ID);
-                  glTexImage2D(GL_TEXTURE_2D, 0, format, image_data.width, image_data.height, 0, format, GL_UNSIGNED_BYTE, image_data.data);
-                  glGenerateMipmap(GL_TEXTURE_2D);
-
-                  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-                  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-                  
-                  auto it = mesh_data.material_map_cache.find(image_data.name);
-                  if(it != mesh_data.material_map_cache.end())
-                  {                        
-                        const Material* mat = &scene.materials[it->second];
-                        scene.diffuse_maps[mat->diffuse_map_ID].DiffuseMapTO = texture_ID;
-                  }
-
-            }
-            else
-            {
-                  assert(false && "failed to load texture");
-            }
+      for(auto mat_info : mesh_data.material_file_info)
+      {           
+            GLuint texture_ID = create_texture(mat_info.file_path.c_str());
             
-            stbi_image_free(image_data.data);
+            
+            auto it = mesh_data.material_map_cache.find(mat_info.material_name);
+            if(it != mesh_data.material_map_cache.end())
+            {                        
+                  const Material* mat = &scene.materials[it->second];
+                  scene.diffuse_maps[mat->diffuse_map_ID].DiffuseMapTO = texture_ID;
+            }
       }
-
       
 
+      
       glGenVertexArrays(1, &mesh_result.mesh_VAO);
       glGenBuffers(1, &mesh_result.postion_BO);
       glGenBuffers(1, &mesh_result.tex_coord_BO);
@@ -894,7 +858,8 @@ void LoadSkinnedMeshes(Scene &scene, const string &filename, vector<uint32_t> *l
       glBufferData(GL_ARRAY_BUFFER, bone_IDs.size() * sizeof(bone_IDs[0]), bone_IDs.data(), GL_STATIC_DRAW);
       glVertexAttribIPointer(SCENE_BONE_ID_ATTRIB_LOCATION, MAX_BONE_INFLUENCE, GL_INT, sizeof(int) * MAX_BONE_INFLUENCE, nullptr);
       glEnableVertexAttribArray(SCENE_BONE_ID_ATTRIB_LOCATION);
-
+      
+      
       glBindBuffer(GL_ARRAY_BUFFER, skinned_mesh_result.bone_weights);
       glBufferData(GL_ARRAY_BUFFER, bone_weights.size() * sizeof(bone_weights[0]), bone_weights.data(), GL_STATIC_DRAW);
       glVertexAttribPointer(SCENE_BONE_WEIGHTS_ATTRIB_LOCATION, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(float) * MAX_BONE_INFLUENCE, nullptr);
@@ -1135,7 +1100,8 @@ uint32_t LoadSkeleton(Scene& scene, cgltf_skin* skin)
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, new_skeleton.anim_pose_SSBO);
             GLsizeiptr buffer_size = sizeof(glm::mat4) * new_skeleton.bone_count;
             glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);      
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);    
+            
       }
 
       {
@@ -1276,3 +1242,125 @@ unsigned int texture_from_file(std::string uri, const std::string &directory, bo
 
 
       
+GLuint create_texture(char const* Filename)
+{
+	gli::texture Texture = gli::load(Filename);
+	if(Texture.empty())
+		return 0;
+
+	gli::gl GL(gli::gl::PROFILE_GL33);
+	gli::gl::format const Format = GL.translate(Texture.format(), Texture.swizzles());
+	GLenum Target = GL.translate(Texture.target());
+
+	GLuint TextureName = 0;
+	glGenTextures(1, &TextureName);
+	glBindTexture(Target, TextureName);
+	glTexParameteri(Target, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(Target, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(Texture.levels() - 1));
+	glTexParameteri(Target, GL_TEXTURE_SWIZZLE_R, Format.Swizzles[0]);
+	glTexParameteri(Target, GL_TEXTURE_SWIZZLE_G, Format.Swizzles[1]);
+	glTexParameteri(Target, GL_TEXTURE_SWIZZLE_B, Format.Swizzles[2]);
+	glTexParameteri(Target, GL_TEXTURE_SWIZZLE_A, Format.Swizzles[3]);
+
+	glm::tvec3<GLsizei> const Extent(Texture.extent());
+	GLsizei const FaceTotal = static_cast<GLsizei>(Texture.layers() * Texture.faces());
+
+	switch(Texture.target())
+	{
+	case gli::TARGET_1D:
+		glTexStorage1D(
+			Target, static_cast<GLint>(Texture.levels()), Format.Internal, Extent.x);
+		break;
+	case gli::TARGET_1D_ARRAY:
+	case gli::TARGET_2D:
+	case gli::TARGET_CUBE:
+		glTexStorage2D(
+			Target, static_cast<GLint>(Texture.levels()), Format.Internal,
+			Extent.x, Texture.target() == gli::TARGET_2D ? Extent.y : FaceTotal);
+		break;
+	case gli::TARGET_2D_ARRAY:
+	case gli::TARGET_3D:
+	case gli::TARGET_CUBE_ARRAY:
+		glTexStorage3D(
+			Target, static_cast<GLint>(Texture.levels()), Format.Internal,
+			Extent.x, Extent.y,
+			Texture.target() == gli::TARGET_3D ? Extent.z : FaceTotal);
+		break;
+	default:
+		assert(0);
+		break;
+	}
+
+	for(std::size_t Layer = 0; Layer < Texture.layers(); ++Layer)
+	for(std::size_t Face = 0; Face < Texture.faces(); ++Face)
+	for(std::size_t Level = 0; Level < Texture.levels(); ++Level)
+	{
+		GLsizei const LayerGL = static_cast<GLsizei>(Layer);
+		glm::tvec3<GLsizei> Extent(Texture.extent(Level));
+		Target = gli::is_target_cube(Texture.target())
+			? static_cast<GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face)
+			: Target;
+
+		switch(Texture.target())
+		{
+		case gli::TARGET_1D:
+			if(gli::is_compressed(Texture.format()))
+				glCompressedTexSubImage1D(
+					Target, static_cast<GLint>(Level), 0, Extent.x,
+					Format.Internal, static_cast<GLsizei>(Texture.size(Level)),
+					Texture.data(Layer, Face, Level));
+			else
+				glTexSubImage1D(
+					Target, static_cast<GLint>(Level), 0, Extent.x,
+					Format.External, Format.Type,
+					Texture.data(Layer, Face, Level));
+			break;
+		case gli::TARGET_1D_ARRAY:
+		case gli::TARGET_2D:
+		case gli::TARGET_CUBE:
+			if(gli::is_compressed(Texture.format()))
+				glCompressedTexSubImage2D(
+					Target, static_cast<GLint>(Level),
+					0, 0,
+					Extent.x,
+					Texture.target() == gli::TARGET_1D_ARRAY ? LayerGL : Extent.y,
+					Format.Internal, static_cast<GLsizei>(Texture.size(Level)),
+					Texture.data(Layer, Face, Level));
+			else
+				glTexSubImage2D(
+					Target, static_cast<GLint>(Level),
+					0, 0,
+					Extent.x,
+					Texture.target() == gli::TARGET_1D_ARRAY ? LayerGL : Extent.y,
+					Format.External, Format.Type,
+					Texture.data(Layer, Face, Level));
+			break;
+		case gli::TARGET_2D_ARRAY:
+		case gli::TARGET_3D:
+		case gli::TARGET_CUBE_ARRAY:
+			if(gli::is_compressed(Texture.format()))
+				glCompressedTexSubImage3D(
+					Target, static_cast<GLint>(Level),
+					0, 0, 0,
+					Extent.x, Extent.y,
+					Texture.target() == gli::TARGET_3D ? Extent.z : LayerGL,
+					Format.Internal, static_cast<GLsizei>(Texture.size(Level)),
+					Texture.data(Layer, Face, Level));
+			else
+				glTexSubImage3D(
+					Target, static_cast<GLint>(Level),
+					0, 0, 0,
+					Extent.x, Extent.y,
+					Texture.target() == gli::TARGET_3D ? Extent.z : LayerGL,
+					Format.External, Format.Type,
+					Texture.data(Layer, Face, Level));
+			break;
+		default: assert(0); break;
+		}
+	}
+      glTexParameteri(Target, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(Target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+      glTexParameteri(Target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+      glTexParameteri(Target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	return TextureName;
+}

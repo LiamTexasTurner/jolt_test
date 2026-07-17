@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 4.1)
 project(SceneRenderer)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(SceneRenderer
   main.cpp
@@ -20,6 +21,7 @@ add_executable(SceneRenderer
   penis/animation.cpp
   penis/job_system.cpp
 
+
   c:/imgui/imgui.cpp
   c:/imgui/imgui_demo.cpp
   c:/imgui/imgui_draw.cpp
@@ -30,14 +32,15 @@ add_executable(SceneRenderer
 )
 
 target_include_directories(SceneRenderer PRIVATE
+  c:/gli
   include
   penis_common
+  c:/cereal/include
   c:/imgui
   c:/imgui/backends
 )
 
 target_link_directories(SceneRenderer PRIVATE
-  dwmapi
   include/GLFW
   c:/imgui
   c:/imgui/backends

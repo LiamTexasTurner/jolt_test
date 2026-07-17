@@ -11,6 +11,7 @@
 #include "packed_freelist.h"
 #include "camera.hpp"
 #include "skybox.hpp"
+#include <cereal/types/vector.hpp>
 
 #include <vector>
 #include <span>
@@ -27,7 +28,7 @@ struct DrawCommand
 
 struct DiffuseMap
 {
-      GLuint DiffuseMapTO = -1;
+      GLuint DiffuseMapTO;
       bool has_transparency = false;
 };
 
@@ -154,22 +155,17 @@ public:
       void Init();
 };
 
-void LoadMeshes(Scene& scene, const std::string& filename, std::vector<uint32_t>* load_mesh_IDs);
-
-struct stb_image_data
+struct material_file_info
 {
-      unsigned char* data;
-      int width;
-      int height;
-      int nrComponents;
-      std::string name;
+      std::string material_name;
+      std::string file_path;
 };
 
 struct MeshData
 {
       std::unordered_map<std::string, uint32_t> material_map_cache;
       std::vector<DrawCommand> draw_commands;
-      std::vector<stb_image_data> images;
+      std::vector<material_file_info> material_file_info;
       std::vector<float> positions;
       std::vector<float> tex_coords;
       std::vector<float> normals;
@@ -181,8 +177,10 @@ struct MeshData
 };
       
 void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filename);
+
 uint32_t UpdloadMesh(Scene& scene, MeshData& mesh_data);
 
+void LoadMeshes(Scene& scene, const std::string& filename, std::vector<uint32_t>* load_mesh_IDs);
 
 void LoadSkinnedMeshes(Scene& scene, const std::string& filename, std::vector<uint32_t>* load_mesh_IDs);
 
@@ -197,5 +195,7 @@ void AddSkinnedMeshInstance(Scene &scene, uint32_t skinned_mesh_ID, uint32_t *ne
 void RemoveInstance(Scene& scene, uint32_t instance_ID);
 
 unsigned int texture_from_file(std::string uri, const std::string &directory, bool gamma);
+
+GLuint create_texture(char const* Filename);
 
 
