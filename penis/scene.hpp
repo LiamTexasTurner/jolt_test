@@ -190,7 +190,7 @@ struct material_file_info
 
 struct MeshData
 {
-      std::unordered_map<std::string, int> material_index_map;
+      std::unordered_map<std::string, std::string> material_name_path_map;
       std::vector<DrawCommand> draw_commands;
       std::vector<material_file_info> material_file_info;
       std::vector<float> positions;
@@ -205,7 +205,7 @@ struct MeshData
       template<class Archive>
       void serialize(Archive& ar)      
       {
-            ar(material_index_map,
+            ar(material_name_path_map,
                draw_commands,
                material_file_info,
                positions,

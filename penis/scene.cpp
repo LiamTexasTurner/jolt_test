@@ -236,8 +236,7 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
                               cgltf_image* image = tex->image;
                               const char* uri = image->uri;
                               string file_path = directory + "/" + filesystem::path(uri).stem().string() + ".dds";
-                              mesh_result.material_file_info.emplace_back(mat->name, file_path);
-                              mesh_result.material_index_map.emplace(mat->name, diffuse_map_index);
+                              mesh_result.material_name_path_map.emplace(mat->name, file_path);
                               diffuse_map_index++;
                         }
                   }
@@ -296,8 +295,7 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
                   //TODO: this should be handled by a defualt material, a case where the material
                   //does not have an albedo texture
                   uint32_t first_index = static_cast<uint32_t>(mesh_result.indices.size());
-                  auto it = mesh_result.material_index_map.find(primitive->material->name);
-                  if(primitive->indices && it != mesh_result.material_index_map.end())
+                  if(primitive->indices)
                   {
                         cgltf_accessor* index_accessor = primitive->indices;
 
@@ -353,16 +351,14 @@ uint32_t UploadMesh(Scene& scene, MeshData& mesh_data)
       mesh_result.draw_commands = mesh_data.draw_commands;
       mesh_result.material_IDs = mesh_data.material_IDs;
       
-      int mat_size = mesh_data.material_index_map.size();
-      int draw_size = mesh_data.draw_commands.size();
+
       for(DrawCommand& cmd : mesh_data.draw_commands)
       {
             
-            auto it = mesh_data.material_index_map.find(cmd.material_name);
-            if(it != mesh_data.material_index_map.end())
+            auto it = mesh_data.material_name_path_map.find(cmd.material_name);
+            if(it != mesh_data.material_name_path_map.end())
             {
-                  material_file_info& mat_info = mesh_data.material_file_info[it->second];
-                  GLuint texture_ID = create_texture(mat_info.file_path.c_str());
+                  GLuint texture_ID = create_texture(it->second.c_str());
 
                   DiffuseMap new_diffuse_map;
                   new_diffuse_map.DiffuseMapTO = texture_ID;                  
@@ -378,7 +374,10 @@ uint32_t UploadMesh(Scene& scene, MeshData& mesh_data)
             }
             else
             {
-                  float x = 0;
+                  Material new_material;
+                  new_material.has_diffuse_map = false;
+                  uint32_t new_material_ID = scene.materials.insert(new_material);
+                  mesh_result.material_IDs.push_back(new_material_ID);
             }
       }
       
