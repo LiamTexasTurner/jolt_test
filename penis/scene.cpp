@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <gli/gli.hpp>
 
+#include <fstream>
 #include <filesystem>
 #include <span>
 #include <iostream>
@@ -206,6 +207,7 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
             cout << "failed to load mesh buffers" << endl;
       }
 
+      int diffuse_map_index = 0;
       for(int i = 0; i < data->materials_count; i++)
       {
             cgltf_material* mat = &data->materials[i];
@@ -225,12 +227,10 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
                               const char* uri = image->uri;
                               string file_path = directory + "/" + filesystem::path(uri).stem().string() + ".dds";
                               mesh_result.material_file_info.emplace_back(mat->name, file_path);
+                              mesh_result.material_index_map.emplace(mat->name, diffuse_map_index);
+                              diffuse_map_index++;
                         }
                   }
-                  uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(DiffuseMap{});
-                  new_material.diffuse_map_ID = new_diffuse_map_ID;
-                  uint32_t new_material_ID = scene.materials.insert(new_material);
-                  mesh_result.material_map_cache.emplace(mat->name, new_material_ID);
             }
       }       
 
@@ -283,9 +283,11 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
 
                   }
 
+                  //TODO: this should be handled by a defualt material, a case where the material
+                  //does not have an albedo texture
                   uint32_t first_index = static_cast<uint32_t>(mesh_result.indices.size());
-
-                  if(primitive->indices)
+                  auto it = mesh_result.material_index_map.find(primitive->material->name);
+                  if(primitive->indices && it != mesh_result.material_index_map.end())
                   {
                         cgltf_accessor* index_accessor = primitive->indices;
 
@@ -298,19 +300,14 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
 
                         DrawCommand curr_draw_cmd{};
                         
-                        curr_draw_cmd.gl_draw_ele_cmd.count = static_cast<GLuint>(index_accessor->count);
-                        curr_draw_cmd.gl_draw_ele_cmd.primCount = 1;
-                        curr_draw_cmd.gl_draw_ele_cmd.firstIndex = first_index;
-                        curr_draw_cmd.gl_draw_ele_cmd.baseVertex = 0;
-                        curr_draw_cmd.gl_draw_ele_cmd.baseInstance = 0;
+                        curr_draw_cmd.count = (index_accessor->count);
+                        curr_draw_cmd.primCount = 1;
+                        curr_draw_cmd.firstIndex = first_index;
+                        curr_draw_cmd.baseVertex = 0;
+                        curr_draw_cmd.baseInstance = 0;
                         curr_draw_cmd.has_transparecny = false;
+                        curr_draw_cmd.material_name = primitive->material->name;
                         mesh_result.draw_commands.push_back(curr_draw_cmd);
-
-                        auto it = mesh_result.material_map_cache.find(primitive->material->name);
-                        if(it != mesh_result.material_map_cache.end())
-                        {
-                              mesh_result.material_IDs.push_back(it->second);
-                        }                     
                   }             
             }            
             break;
@@ -325,6 +322,17 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
       mesh_result.vertex_count = static_cast<GLuint>(mesh_result.positions.size() / 3);
       mesh_result.index_count = static_cast<GLuint>(mesh_result.indices.size());
 
+      
+
+      string bin_folder = directory + "/" + "bin/";
+
+      string asset_name = filesystem::path(directory).stem().string() + ".pbin";
+      
+      cout << asset_name << endl;
+      ofstream of(bin_folder + asset_name, ios::binary);
+      cereal::BinaryOutputArchive archive(of);
+      archive(mesh_result);
+
 }
 
 uint32_t UploadMesh(Scene& scene, MeshData& mesh_data)
@@ -334,16 +342,32 @@ uint32_t UploadMesh(Scene& scene, MeshData& mesh_data)
       mesh_result.index_count = mesh_data.index_count;
       mesh_result.draw_commands = mesh_data.draw_commands;
       mesh_result.material_IDs = mesh_data.material_IDs;
+      
+      int mat_size = mesh_data.material_index_map.size();
+      int draw_size = mesh_data.draw_commands.size();
+      for(DrawCommand& cmd : mesh_data.draw_commands)
+      {
+            
+            auto it = mesh_data.material_index_map.find(cmd.material_name);
+            if(it != mesh_data.material_index_map.end())
+            {
+                  material_file_info& mat_info = mesh_data.material_file_info[it->second];
+                  GLuint texture_ID = create_texture(mat_info.file_path.c_str());
 
+                  DiffuseMap new_diffuse_map;
+                  new_diffuse_map.DiffuseMapTO = texture_ID;
+                  new_diffuse_map.has_transparency = false;
+                  uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(new_diffuse_map);
+                       
+                  Material new_material;
+                  new_material.diffuse_map_ID = new_diffuse_map_ID;
+                  uint32_t new_material_ID = scene.materials.insert(new_material);
 
-      for(auto mat_info : mesh_data.material_file_info)
-      {           
-            GLuint texture_ID = create_texture(mat_info.file_path.c_str());
-            auto it = mesh_data.material_map_cache.find(mat_info.material_name);
-            if(it != mesh_data.material_map_cache.end())
-            {                        
-                  const Material* mat = &scene.materials[it->second];
-                  scene.diffuse_maps[mat->diffuse_map_ID].DiffuseMapTO = texture_ID;
+                  mesh_result.material_IDs.push_back(new_material_ID);
+            }
+            else
+            {
+                  float x = 0;
             }
       }
       
@@ -534,11 +558,11 @@ void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mes
 
                         DrawCommand curr_draw_cmd{};
 
-                        curr_draw_cmd.gl_draw_ele_cmd.count = static_cast<GLuint>(index_accessor->count);
-                        curr_draw_cmd.gl_draw_ele_cmd.primCount = 1;
-                        curr_draw_cmd.gl_draw_ele_cmd.firstIndex = first_index;
-                        curr_draw_cmd.gl_draw_ele_cmd.baseVertex = 0;
-                        curr_draw_cmd.gl_draw_ele_cmd.baseInstance = 0;
+                        curr_draw_cmd.count = index_accessor->count;
+                        curr_draw_cmd.primCount = 1;
+                        curr_draw_cmd.firstIndex = first_index;
+                        curr_draw_cmd.baseVertex = 0;
+                        curr_draw_cmd.baseInstance = 0;
                         curr_draw_cmd.has_transparecny = has_transparency;
                         mesh_result.draw_commands.push_back(curr_draw_cmd);
 
@@ -778,11 +802,11 @@ void LoadSkinnedMeshes(Scene &scene, const string &filename, vector<uint32_t> *l
 
                         DrawCommand curr_draw_cmd{};
 
-                        curr_draw_cmd.gl_draw_ele_cmd.count = static_cast<GLuint>(index_accessor->count);
-                        curr_draw_cmd.gl_draw_ele_cmd.primCount = 1;
-                        curr_draw_cmd.gl_draw_ele_cmd.firstIndex = first_index;
-                        curr_draw_cmd.gl_draw_ele_cmd.baseVertex = 0;
-                        curr_draw_cmd.gl_draw_ele_cmd.baseInstance = 0;
+                        curr_draw_cmd.count = index_accessor->count;
+                        curr_draw_cmd.primCount = 1;
+                        curr_draw_cmd.firstIndex = first_index;
+                        curr_draw_cmd.baseVertex = 0;
+                        curr_draw_cmd.baseInstance = 0;
                         curr_draw_cmd.has_transparecny = has_transparency;
                         skinned_mesh_result.draw_commands.push_back(curr_draw_cmd);
 

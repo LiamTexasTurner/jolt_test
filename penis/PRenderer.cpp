@@ -332,7 +332,7 @@ void PRenderer::DrawShadowMap(const glm::mat4& light_space_matrix)
             glBindVertexArray(mesh->mesh_VAO);
             for(size_t mesh_draw_index = 0; mesh_draw_index < mesh->draw_commands.size(); mesh_draw_index++)
             {
-                  const GLDrawElementsIndirectCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index].gl_draw_ele_cmd;
+                  const DrawCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index];
 
                   const Material* material = &m_scene->materials[mesh->material_IDs[mesh_draw_index]];
 
@@ -437,7 +437,7 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             glBindVertexArray(mesh->mesh_VAO);
             for(size_t mesh_draw_index = 0; mesh_draw_index < mesh->draw_commands.size(); mesh_draw_index++)
             {
-                  const GLDrawElementsIndirectCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index].gl_draw_ele_cmd;
+                  const DrawCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index];
                   const Material* material = &m_scene->materials[mesh->material_IDs[mesh_draw_index]];
 
 
@@ -511,7 +511,7 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             glBindVertexArray(skinned_mesh->mesh_VAO);
             for(size_t mesh_draw_index = 0; mesh_draw_index < skinned_mesh->draw_commands.size(); mesh_draw_index++)
             {
-                  const GLDrawElementsIndirectCommand* draw_cmd = &skinned_mesh->draw_commands[mesh_draw_index].gl_draw_ele_cmd;
+                  const DrawCommand* draw_cmd = &skinned_mesh->draw_commands[mesh_draw_index];
                   const Material* material = &m_scene->materials[skinned_mesh->material_IDs[mesh_draw_index]];
 
 
@@ -610,7 +610,7 @@ void PRenderer::DrawTransparent(const glm::mat4& projection,
                   {
                         float x = 0;
                   }
-                  const GLDrawElementsIndirectCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index].gl_draw_ele_cmd;
+                  const DrawCommand* draw_cmd = &mesh->draw_commands[mesh_draw_index];
                   const Material* material = &m_scene->materials[mesh->material_IDs[mesh_draw_index]];
 
                   glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);

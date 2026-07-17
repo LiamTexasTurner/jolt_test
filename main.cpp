@@ -45,6 +45,11 @@ double delta_time = 0.0;
 
 int main()
 {
+#ifdef _DEBUG
+      _CrtSetReportMode(_CRT_WARN,   _CRTDBG_MODE_DEBUG);
+      _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_DEBUG);
+      _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_DEBUG);
+#endif
       JobSystem::Initialize();
       glfwInit();
       glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);

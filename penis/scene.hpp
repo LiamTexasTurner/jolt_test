@@ -12,6 +12,9 @@
 #include "camera.hpp"
 #include "skybox.hpp"
 #include <cereal/types/vector.hpp>
+#include <cereal/types/string.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/archives/binary.hpp>
 
 #include <vector>
 #include <span>
@@ -21,9 +24,25 @@
 
 struct DrawCommand
 {
-      GLDrawElementsIndirectCommand gl_draw_ele_cmd;
+      std::string material_name;
+      int baseVertex;
+      unsigned int count;
+      unsigned int primCount;
+      unsigned int firstIndex;
+      unsigned int baseInstance;
       bool has_transparecny = false;
-      uint32_t material_ID;
+
+      template<class Archive>
+      void serialize(Archive& ar)
+      {
+            ar(material_name,
+               baseVertex,
+               count,
+               primCount,
+               firstIndex,
+               baseInstance,
+               has_transparecny);
+      };
 };
 
 struct DiffuseMap
@@ -159,11 +178,17 @@ struct material_file_info
 {
       std::string material_name;
       std::string file_path;
+      template<class Archive>
+      void serialize(Archive& ar)
+      {
+            ar(material_name,
+               file_path);
+      };
 };
 
 struct MeshData
 {
-      std::unordered_map<std::string, uint32_t> material_map_cache;
+      std::unordered_map<std::string, int> material_index_map;
       std::vector<DrawCommand> draw_commands;
       std::vector<material_file_info> material_file_info;
       std::vector<float> positions;
@@ -171,9 +196,22 @@ struct MeshData
       std::vector<float> normals;
       std::vector<uint32_t> indices;
       std::vector<uint32_t> material_IDs;
+      
+      unsigned int index_count;
+      unsigned int vertex_count;
 
-      GLuint index_count;
-      GLuint vertex_count;
+      template<class Archive>
+      void serialize(Archive& ar)      
+      {
+            ar(material_index_map,
+               draw_commands,
+               material_file_info,
+               positions,
+               tex_coords,
+               normals,
+               indices,
+               material_IDs);
+      };
 };
       
 void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filename);
