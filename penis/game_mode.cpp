@@ -41,9 +41,13 @@ public:
 
             // MeshData chips_mesh_result;
             // JobSystem::Execute([&]{LoadMeshAsync(*m_scene, chips_mesh_result, "../resources/chips_2/chips_2.gltf");});
-            
+                  
             MeshData delta_mesh_result;
             JobSystem::Execute([&]{LoadMeshAsync(*m_scene, delta_mesh_result, "../resources/delta/delta.gltf");});
+
+            // std::ifstream is("../resources/delta/bin/delta.pbin", ios::binary);
+            // cereal::BinaryInputArchive i_archive(is);
+            // i_archive(delta_mesh_result);
                   
             JobSystem::Wait();
 
@@ -62,6 +66,7 @@ public:
             //       scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
             //       entities.emplace_back(Entity(new_instance_ID));
             // };
+
 
             uint32_t delta_ID = UploadMesh(*m_scene, delta_mesh_result);
             {

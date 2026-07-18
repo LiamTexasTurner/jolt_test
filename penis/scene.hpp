@@ -67,9 +67,9 @@ struct Material
 
       bool has_diffuse_map = false;
       
-      uint32_t diffuse_map_ID;
-      uint32_t normal_map_ID;
-      uint32_t orm_map_ID;
+      uint32_t diffuse_map_ID = 0;
+      uint32_t normal_map_ID = 0;
+      uint32_t orm_map_ID = 0;
 };
 
 struct Mesh
@@ -99,7 +99,7 @@ struct Animation
 {
       std::string name;
       std::vector<std::vector<TRS>> frame_poses;
-      uint32_t skeleton_ID;
+      uint32_t skeleton_ID = 0;
       int frame_count;
 };
 
@@ -122,7 +122,7 @@ struct SkinnedMesh
       std::vector<uint32_t> material_IDs;
       std::string Name;
 
-      uint32_t skeleton_ID;
+      uint32_t skeleton_ID = 0;
 
       GLuint mesh_VAO;
       GLuint postion_BO;
@@ -153,7 +153,7 @@ struct Instance
 
 struct Opaque
 {
-      uint32_t instance_id;
+      uint32_t instance_id = 0;
 };
 
 class Scene
@@ -170,7 +170,7 @@ public:
       packed_freelist<Skeleton> skeletons;
       packed_freelist<Skybox> skyboxes;
 
-      uint32_t main_camera_ID;
+      uint32_t main_camera_ID = 0;;
       std::map<std::string, uint32_t> skeleton_skinned_mesh_map;
 
       void Init();
@@ -188,9 +188,23 @@ struct material_file_info
       };
 };
 
+struct MaterialLoadData
+{
+      std::string diffuse_path = "";
+      float scale[2] = {1.0f, 1.0f};
+      float offset[2] = {0.0f, 0.0f};
+      template<class Archive>
+      void serialize(Archive& ar)
+      {
+            ar(diffuse_path,
+               scale,
+               offset);
+      }
+};
+
 struct MeshData
 {
-      std::unordered_map<std::string, std::string> material_name_path_map;
+      std::unordered_map<std::string, MaterialLoadData> material_load_map;
       std::vector<DrawCommand> draw_commands;
       std::vector<material_file_info> material_file_info;
       std::vector<float> positions;
@@ -205,7 +219,7 @@ struct MeshData
       template<class Archive>
       void serialize(Archive& ar)      
       {
-            ar(material_name_path_map,
+            ar(material_load_map,
                draw_commands,
                material_file_info,
                positions,

@@ -217,17 +217,24 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
             cout << "failed to load mesh buffers" << endl;
       }
 
-      int diffuse_map_index = 0;
+
       for(int i = 0; i < data->materials_count; i++)
       {
             cgltf_material* mat = &data->materials[i];
             
-            Material new_material;
-            new_material.name = mat->name;
+            MaterialLoadData mat_load_data;
             
             if(mat->has_pbr_metallic_roughness)
             {
-                  cgltf_texture_view* base_color = &mat->pbr_metallic_roughness.base_color_texture;                 
+                  cgltf_texture_view* base_color = &mat->pbr_metallic_roughness.base_color_texture;
+                  if(base_color->has_transform)
+                  {
+                        mat_load_data.scale[0] = (float)base_color->transform.scale[0];
+                        mat_load_data.scale[1] = (float)base_color->transform.scale[1];
+
+                        mat_load_data.offset[0] = (float)base_color->transform.offset[0];
+                        mat_load_data.offset[1] = (float)base_color->transform.offset[1];
+                  }
                   if(base_color->texture)
                   {
                         cgltf_texture* tex = base_color->texture;
@@ -235,12 +242,12 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
                         {
                               cgltf_image* image = tex->image;
                               const char* uri = image->uri;
-                              string file_path = directory + "/" + filesystem::path(uri).stem().string() + ".dds";
-                              mesh_result.material_name_path_map.emplace(mat->name, file_path);
-                              diffuse_map_index++;
+                              mat_load_data.diffuse_path = directory + "/" + filesystem::path(uri).stem().string() + ".dds";
                         }
                   }
             }
+
+            mesh_result.material_load_map.emplace(mat->name, mat_load_data);
       }       
 
       for(int i = 0; i < data->nodes_count; i++)
@@ -355,11 +362,13 @@ uint32_t UploadMesh(Scene& scene, MeshData& mesh_data)
       for(DrawCommand& cmd : mesh_data.draw_commands)
       {
             
-            auto it = mesh_data.material_name_path_map.find(cmd.material_name);
-            if(it != mesh_data.material_name_path_map.end())
+            auto it = mesh_data.material_load_map.find(cmd.material_name);
+            if(it != mesh_data.material_load_map.end())
             {
-                  GLuint texture_ID = create_texture(it->second.c_str());
-
+                  MaterialLoadData& data = it->second;
+                  
+                  GLuint texture_ID = create_texture(data.diffuse_path.c_str());
+                  
                   DiffuseMap new_diffuse_map;
                   new_diffuse_map.DiffuseMapTO = texture_ID;                  
                   new_diffuse_map.has_transparency = false;
@@ -368,9 +377,21 @@ uint32_t UploadMesh(Scene& scene, MeshData& mesh_data)
                   Material new_material;
                   new_material.has_diffuse_map = true;
                   new_material.diffuse_map_ID = new_diffuse_map_ID;
-                  uint32_t new_material_ID = scene.materials.insert(new_material);
+                  
 
+                  if(data.scale[0] != 1)
+                  {
+                        float x = 0;
+                  }
+
+                  new_material.offset = glm::vec2(data.offset[0], data.offset[1]);
+                  new_material.scale = glm::vec2(data.scale[0], data.scale[1]);
+
+                  
+                  uint32_t new_material_ID = scene.materials.insert(new_material);
                   mesh_result.material_IDs.push_back(new_material_ID);
+
+      
             }
             else
             {
@@ -379,6 +400,8 @@ uint32_t UploadMesh(Scene& scene, MeshData& mesh_data)
                   uint32_t new_material_ID = scene.materials.insert(new_material);
                   mesh_result.material_IDs.push_back(new_material_ID);
             }
+
+      
       }
       
       glGenVertexArrays(1, &mesh_result.mesh_VAO);
