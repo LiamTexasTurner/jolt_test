@@ -77,19 +77,13 @@ struct material_file_info
       };
 };
 
-      
-void LoadMeshAsync(MeshData& mesh_result, const std::string& filename);
+uint32_t LoadMesh(Scene& scene, MeshData& mesh_data);
 
-uint32_t UploadMesh(Scene& scene, MeshData& mesh_data);
+uint32_t LoadSkeleton(Scene& scene, SkeletonData& skeleton_data);
 
 void LoadAnimation(Scene& scene, const std::string& path);
 
-void LoadMeshes(Scene& scene, const std::string& filename, std::vector<uint32_t>* load_mesh_IDs);
-
-void LoadSkinnedMeshes(Scene& scene, const std::string& filename, std::vector<uint32_t>* load_mesh_IDs);
-
-
-
+void LoadAnimations(Scene& scene, const std::string& path);
 
 void AddSkybox(Scene& scene, uint32_t* new_skybox_ID);
 
