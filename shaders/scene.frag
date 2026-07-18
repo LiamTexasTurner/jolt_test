@@ -52,13 +52,15 @@ float shadowCalculation(vec4 fragPosLightSpace)
 
 void main()
 {
-  vec2 diffuse_map_tex_coords = fTexCoord * tex_coord_scale + tex_coord_offset;
   
-  vec4 color;
+  
+
   if(HasDiffuseMap)
     {
-      color = texture(DiffuseMap, diffuse_map_tex_coords);
-            
+      vec2 diffuse_map_tex_coords = fTexCoord * tex_coord_scale + tex_coord_offset;
+      
+      vec4 color = texture(DiffuseMap, diffuse_map_tex_coords);
+      
       if(color.a < 0.1)
         discard;
   
@@ -85,9 +87,6 @@ void main()
     {
       FragColor = vec4(1, 0, 1, 1.0);
     }
-
-
-  // FragColor = color;
 }
 
 

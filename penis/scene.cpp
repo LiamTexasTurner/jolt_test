@@ -1,10 +1,8 @@
-
 #include "scene.hpp"
 #include "preamble.glsl"
 
 #include "stb_image.h"
 #include "cgltf.h"
-#include "dds_loader.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
@@ -21,7 +19,7 @@ using namespace std;
 #define ANIMDELAY 16.6667f
 #define EPSILON 0.000001f
 
-uint32_t LoadSkeleton(Scene& scene, cgltf_skin* skin);
+uint32_t LoadSkeleton(Scene& scene, SkeletonData& skeleton_data);
 void LoadBoneInfo(cgltf_skin* skin, vector<BoneInfo>& bones);
 bool get_pose_at_time(cgltf_interpolation_type interpolationType, cgltf_accessor *input, cgltf_accessor *output, float time, void* data)
 {
@@ -202,7 +200,7 @@ void Scene::Init()
       
 }
 
-void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filename)
+void LoadMeshAsync(MeshData& mesh_result, const std::string& filename)
 {
       cgltf_options options{};
       cgltf_data* data = nullptr;
@@ -243,6 +241,7 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
                               cgltf_image* image = tex->image;
                               const char* uri = image->uri;
                               mat_load_data.diffuse_path = directory + "/" + filesystem::path(uri).stem().string() + ".dds";
+                              mat_load_data.has_diffuse_map = true;
                         }
                   }
             }
@@ -352,92 +351,204 @@ void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filen
 
 uint32_t UploadMesh(Scene& scene, MeshData& mesh_data)
 {
-      Mesh mesh_result;
-      mesh_result.vertex_count = mesh_data.vertex_count;
-      mesh_result.index_count = mesh_data.index_count;
-      mesh_result.draw_commands = mesh_data.draw_commands;
-      mesh_result.material_IDs = mesh_data.material_IDs;
-      
-
-      for(DrawCommand& cmd : mesh_data.draw_commands)
+      if(!mesh_data.skinned)
       {
+            Mesh mesh_result;
+            mesh_result.vertex_count = mesh_data.vertex_count;
+            mesh_result.index_count = mesh_data.index_count;
+            mesh_result.draw_commands = mesh_data.draw_commands;
+            mesh_result.material_IDs = mesh_data.material_IDs;
             
-            auto it = mesh_data.material_load_map.find(cmd.material_name);
-            if(it != mesh_data.material_load_map.end())
+
+            for(DrawCommand& cmd : mesh_data.draw_commands)
             {
-                  MaterialLoadData& data = it->second;
-                  
-                  GLuint texture_ID = create_texture(data.diffuse_path.c_str());
-                  
-                  DiffuseMap new_diffuse_map;
-                  new_diffuse_map.DiffuseMapTO = texture_ID;                  
-                  new_diffuse_map.has_transparency = false;
-                  uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(new_diffuse_map);
-                       
-                  Material new_material;
-                  new_material.has_diffuse_map = true;
-                  new_material.diffuse_map_ID = new_diffuse_map_ID;
-                  
 
-                  if(data.scale[0] != 1)
+                  auto it = mesh_data.material_load_map.find(cmd.material_name);
+                  if(it != mesh_data.material_load_map.end())
                   {
-                        float x = 0;
+                        MaterialLoadData& data = it->second;
+
+                        GLuint texture_ID = create_texture(data.diffuse_path.c_str());
+
+                        DiffuseMap new_diffuse_map;
+                        new_diffuse_map.DiffuseMapTO = texture_ID;                  
+                        new_diffuse_map.has_transparency = false;
+                        uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(new_diffuse_map);
+
+                        Material new_material;
+                        new_material.has_diffuse_map = data.has_diffuse_map;
+                        new_material.diffuse_map_ID = new_diffuse_map_ID;
+
+                        new_material.offset = glm::vec2(data.offset[0], data.offset[1]);
+                        new_material.scale = glm::vec2(data.scale[0], data.scale[1]);
+
+
+                        uint32_t new_material_ID = scene.materials.insert(new_material);
+                        mesh_result.material_IDs.push_back(new_material_ID);
+
                   }
+                  else
+                  {
+                        Material new_material;
+                        new_material.has_diffuse_map = false;
+                        uint32_t new_material_ID = scene.materials.insert(new_material);
+                        mesh_result.material_IDs.push_back(new_material_ID);
+                  }
+            }
 
-                  new_material.offset = glm::vec2(data.offset[0], data.offset[1]);
-                  new_material.scale = glm::vec2(data.scale[0], data.scale[1]);
 
-                  
-                  uint32_t new_material_ID = scene.materials.insert(new_material);
-                  mesh_result.material_IDs.push_back(new_material_ID);
 
-      
+            glGenVertexArrays(1, &mesh_result.mesh_VAO);
+            glGenBuffers(1, &mesh_result.postion_BO);
+            glGenBuffers(1, &mesh_result.tex_coord_BO);
+            glGenBuffers(1, &mesh_result.normal_BO);
+            glGenBuffers(1, &mesh_result.index_BO);
+
+            glBindVertexArray(mesh_result.mesh_VAO);
+
+            glBindBuffer(GL_ARRAY_BUFFER, mesh_result.postion_BO);
+            glBufferData(GL_ARRAY_BUFFER, mesh_data.positions.size() * sizeof(float), mesh_data.positions.data(), GL_STATIC_DRAW);
+            glVertexAttribPointer(SCENE_POSITION_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
+            glEnableVertexAttribArray(SCENE_POSITION_ATTRIB_LOCATION);
+
+            glBindBuffer(GL_ARRAY_BUFFER, mesh_result.tex_coord_BO);
+            glBufferData(GL_ARRAY_BUFFER, mesh_data.tex_coords.size() * sizeof(mesh_data.tex_coords[0]), mesh_data.tex_coords.data(), GL_STATIC_DRAW);
+            glVertexAttribPointer(SCENE_TEXCOORD_ATTRIB_LOCATION, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
+            glEnableVertexAttribArray(SCENE_TEXCOORD_ATTRIB_LOCATION);
+
+            glBindBuffer(GL_ARRAY_BUFFER, mesh_result.normal_BO);
+            glBufferData(GL_ARRAY_BUFFER, mesh_data.normals.size() * sizeof(mesh_data.normals[0]), mesh_data.normals.data(), GL_STATIC_DRAW);
+            glVertexAttribPointer(SCENE_NORMAL_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
+            glEnableVertexAttribArray(SCENE_NORMAL_ATTRIB_LOCATION);
+
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_result.index_BO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh_data.indices.size() * sizeof(uint32_t), mesh_data.indices.data(), GL_STATIC_DRAW);
+
+            glBindVertexArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+
+            
+            
+            uint32_t new_mesh_ID = scene.meshes.insert(mesh_result);
+
+            return new_mesh_ID;
+      }
+      else
+      {
+            SkinnedMesh mesh_result;
+            mesh_result.vertex_count = mesh_data.vertex_count;
+            mesh_result.index_count = mesh_data.index_count;
+            mesh_result.draw_commands = mesh_data.draw_commands;
+            mesh_result.material_IDs = mesh_data.material_IDs;
+            
+
+            for(DrawCommand& cmd : mesh_data.draw_commands)
+            {
+
+                  auto it = mesh_data.material_load_map.find(cmd.material_name);
+                  if(it != mesh_data.material_load_map.end())
+                  {
+                        MaterialLoadData& data = it->second;
+
+                        GLuint texture_ID = create_texture(data.diffuse_path.c_str());
+
+                        DiffuseMap new_diffuse_map;
+                        new_diffuse_map.DiffuseMapTO = texture_ID;                  
+                        new_diffuse_map.has_transparency = false;
+                        uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(new_diffuse_map);
+
+                        Material new_material;
+                        new_material.has_diffuse_map = data.has_diffuse_map;
+                        new_material.diffuse_map_ID = new_diffuse_map_ID;
+
+                        new_material.offset = glm::vec2(data.offset[0], data.offset[1]);
+                        new_material.scale = glm::vec2(data.scale[0], data.scale[1]);
+
+
+                        uint32_t new_material_ID = scene.materials.insert(new_material);
+                        mesh_result.material_IDs.push_back(new_material_ID);
+
+                  }
+                  else
+                  {
+                        Material new_material;
+                        new_material.has_diffuse_map = false;
+                        uint32_t new_material_ID = scene.materials.insert(new_material);
+                        mesh_result.material_IDs.push_back(new_material_ID);
+                  }
+            }
+
+
+            string skeleton_name = filesystem::path(mesh_data.skeleton_path).stem().string();
+            cout << skeleton_name << endl;
+            auto [it, inserted] = scene.skeleton_skinned_mesh_map.try_emplace(mesh_data.skeleton_path);
+            if(inserted)
+            {
+                  SkeletonData skeleton_data;
+                  std::ifstream is(mesh_data.skeleton_path, ios::binary);
+                  cereal::BinaryInputArchive i_archive(is);
+                  i_archive(skeleton_data);
+
+                  mesh_result.skeleton_ID = LoadSkeleton(scene, skeleton_data);
             }
             else
             {
-                  Material new_material;
-                  new_material.has_diffuse_map = false;
-                  uint32_t new_material_ID = scene.materials.insert(new_material);
-                  mesh_result.material_IDs.push_back(new_material_ID);
+                  mesh_result.skeleton_ID = it->second;
             }
-
       
+            glGenVertexArrays(1, &mesh_result.mesh_VAO);
+            glGenBuffers(1, &mesh_result.postion_BO);
+            glGenBuffers(1, &mesh_result.tex_coord_BO);
+            glGenBuffers(1, &mesh_result.normal_BO);
+            glGenBuffers(1, &mesh_result.bone_IDs);
+            glGenBuffers(1, &mesh_result.bone_weights);
+            glGenBuffers(1, &mesh_result.index_BO);
+
+            glBindVertexArray(mesh_result.mesh_VAO);
+
+            glBindBuffer(GL_ARRAY_BUFFER, mesh_result.postion_BO);
+            glBufferData(GL_ARRAY_BUFFER, mesh_data.positions.size() * sizeof(float), mesh_data.positions.data(), GL_STATIC_DRAW);
+            glVertexAttribPointer(SCENE_POSITION_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
+            glEnableVertexAttribArray(SCENE_POSITION_ATTRIB_LOCATION);
+
+            glBindBuffer(GL_ARRAY_BUFFER, mesh_result.tex_coord_BO);
+            glBufferData(GL_ARRAY_BUFFER, mesh_data.tex_coords.size() * sizeof(mesh_data.tex_coords[0]), mesh_data.tex_coords.data(), GL_STATIC_DRAW);
+            glVertexAttribPointer(SCENE_TEXCOORD_ATTRIB_LOCATION, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
+            glEnableVertexAttribArray(SCENE_TEXCOORD_ATTRIB_LOCATION);
+
+            glBindBuffer(GL_ARRAY_BUFFER, mesh_result.normal_BO);
+            glBufferData(GL_ARRAY_BUFFER, mesh_data.normals.size() * sizeof(mesh_data.normals[0]), mesh_data.normals.data(), GL_STATIC_DRAW);
+            glVertexAttribPointer(SCENE_NORMAL_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
+            glEnableVertexAttribArray(SCENE_NORMAL_ATTRIB_LOCATION);
+
+            glBindBuffer(GL_ARRAY_BUFFER, mesh_result.bone_IDs);
+            glBufferData(GL_ARRAY_BUFFER, mesh_data.bone_IDs.size() * sizeof(mesh_data.bone_IDs[0]), mesh_data.bone_IDs.data(), GL_STATIC_DRAW);
+            glVertexAttribIPointer(SCENE_BONE_ID_ATTRIB_LOCATION, MAX_BONE_INFLUENCE, GL_INT, sizeof(int) * MAX_BONE_INFLUENCE, nullptr);
+            glEnableVertexAttribArray(SCENE_BONE_ID_ATTRIB_LOCATION);
+            
+            
+            glBindBuffer(GL_ARRAY_BUFFER, mesh_result.bone_weights);
+            glBufferData(GL_ARRAY_BUFFER, mesh_data.bone_weights.size() * sizeof(mesh_data.bone_weights[0]), mesh_data.bone_weights.data(), GL_STATIC_DRAW);
+            glVertexAttribPointer(SCENE_BONE_WEIGHTS_ATTRIB_LOCATION, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(float) * MAX_BONE_INFLUENCE, nullptr);
+            glEnableVertexAttribArray(SCENE_BONE_WEIGHTS_ATTRIB_LOCATION);
+
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_result.index_BO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh_data.indices.size() * sizeof(uint32_t), mesh_data.indices.data(), GL_STATIC_DRAW);
+
+            glBindVertexArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+            
+            
+            
+            uint32_t new_mesh_ID = scene.skinned_meshes.insert(mesh_result);
+
+            return new_mesh_ID;
       }
-      
-      glGenVertexArrays(1, &mesh_result.mesh_VAO);
-      glGenBuffers(1, &mesh_result.postion_BO);
-      glGenBuffers(1, &mesh_result.tex_coord_BO);
-      glGenBuffers(1, &mesh_result.normal_BO);
-      glGenBuffers(1, &mesh_result.index_BO);
-
-      glBindVertexArray(mesh_result.mesh_VAO);
-
-      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.postion_BO);
-      glBufferData(GL_ARRAY_BUFFER, mesh_data.positions.size() * sizeof(float), mesh_data.positions.data(), GL_STATIC_DRAW);
-      glVertexAttribPointer(SCENE_POSITION_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
-      glEnableVertexAttribArray(SCENE_POSITION_ATTRIB_LOCATION);
-
-      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.tex_coord_BO);
-      glBufferData(GL_ARRAY_BUFFER, mesh_data.tex_coords.size() * sizeof(mesh_data.tex_coords[0]), mesh_data.tex_coords.data(), GL_STATIC_DRAW);
-      glVertexAttribPointer(SCENE_TEXCOORD_ATTRIB_LOCATION, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
-      glEnableVertexAttribArray(SCENE_TEXCOORD_ATTRIB_LOCATION);
-
-      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.normal_BO);
-      glBufferData(GL_ARRAY_BUFFER, mesh_data.normals.size() * sizeof(mesh_data.normals[0]), mesh_data.normals.data(), GL_STATIC_DRAW);
-      glVertexAttribPointer(SCENE_NORMAL_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
-      glEnableVertexAttribArray(SCENE_NORMAL_ATTRIB_LOCATION);
-
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_result.index_BO);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh_data.indices.size() * sizeof(uint32_t), mesh_data.indices.data(), GL_STATIC_DRAW);
-
-      glBindVertexArray(0);
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-      uint32_t new_mesh_ID = scene.meshes.insert(mesh_result);
-
-      return new_mesh_ID;
-      
 }
+      
+
 
 void LoadMeshes(Scene &scene, const string &filename, vector<uint32_t> *load_mesh_IDs)
 {
@@ -873,7 +984,7 @@ void LoadSkinnedMeshes(Scene &scene, const string &filename, vector<uint32_t> *l
             }
             else
             {
-                  skeleton_ID = LoadSkeleton(scene, skin);
+                  // skeleton_ID = LoadSkeleton(scene, skin);
                   
             }
             skinned_mesh_result.skeleton_ID = skeleton_ID;
@@ -984,7 +1095,7 @@ void LoadAnimation(Scene& scene, const std::string& filename, std::vector<uint32
       }
       else
       {
-            LoadSkeleton(scene, skin);
+            // LoadSkeleton(scene, skin);
       }
       
       const Skeleton* skeleton = &scene.skeletons[skeleton_ID];
@@ -1100,42 +1211,16 @@ void LoadAnimation(Scene& scene, const std::string& filename, std::vector<uint32
       }
       cgltf_free(data);
 }
-
-uint32_t LoadSkeleton(Scene& scene, cgltf_skin* skin)
+      
+uint32_t LoadSkeleton(Scene& scene, SkeletonData& skeleton_data)
 {
       Skeleton new_skeleton;
-      LoadBoneInfo(skin, new_skeleton.bone_info);
-      new_skeleton.bone_count = skin->joints_count;
-      cgltf_accessor* bind_mats = skin->inverse_bind_matrices;
-      new_skeleton.inv_bind_mats.resize(bind_mats->count);                  
-      for(cgltf_size i = 0; i < bind_mats->count; i++)
-      {
-            float values[16];
-            bool success = cgltf_accessor_read_float(bind_mats, i, values, 16);
-            new_skeleton.inv_bind_mats[i] = glm::make_mat4(values);
-      }
-      new_skeleton.bind_pose.resize(skin->joints_count);
-      for(int i = 0; i < skin->joints_count; i++)
-      {
-            cgltf_node* node = skin->joints[i];
 
-            cgltf_float world_transform[16];
-            cgltf_node_transform_world(node, world_transform);
-
-            glm::mat4 world_mat = glm::make_mat4(world_transform);
-
-            glm::vec3 scale;
-            glm::quat rotation;
-            glm::vec3 translation;
-            glm::vec3 skew;
-            glm::vec4 perspective;
-
-            glm::decompose(world_mat, scale, rotation, translation, skew, perspective);
-
-            new_skeleton.bind_pose[i].translation = glm::vec4(translation, 1.0f);
-            new_skeleton.bind_pose[i].rotation = rotation;
-            new_skeleton.bind_pose[i].scale = glm::vec4(scale, 1.0f);
-      }
+      new_skeleton.name = skeleton_data.bone_count;
+      new_skeleton.bone_count = skeleton_data.bone_count;
+      new_skeleton.bone_info = skeleton_data.bone_info;
+      new_skeleton.inv_bind_mats = skeleton_data.inv_bind_mats;
+      
 
       glGenBuffers(1, &new_skeleton.inv_bind_pose_SSBO);
       glGenBuffers(1, &new_skeleton.anim_pose_SSBO);
@@ -1173,7 +1258,7 @@ uint32_t LoadSkeleton(Scene& scene, cgltf_skin* skin)
       
       
       uint32_t new_skeleton_ID = scene.skeletons.insert(new_skeleton);
-      scene.skeleton_skinned_mesh_map.emplace(string(skin->name), new_skeleton_ID);
+      scene.skeleton_skinned_mesh_map.emplace(new_skeleton.name, new_skeleton_ID);
 
       return new_skeleton_ID;
 }

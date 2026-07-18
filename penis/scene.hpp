@@ -22,119 +22,8 @@
 #include <map>
 #include <unordered_map>
 
-struct DrawCommand
-{
-      std::string material_name;
-      int baseVertex;
-      unsigned int count;
-      unsigned int primCount;
-      unsigned int firstIndex;
-      unsigned int baseInstance;
-      bool has_transparecny = false;
+#include "penis_mesh.hpp"
 
-      template<class Archive>
-      void serialize(Archive& ar)
-      {
-            ar(material_name,
-               baseVertex,
-               count,
-               primCount,
-               firstIndex,
-               baseInstance,
-               has_transparecny);
-      };
-};
-
-struct DiffuseMap
-{
-      GLuint DiffuseMapTO;
-      bool has_transparency = false;
-};
-
-struct Material
-{
-      std::string name;
-
-      glm::vec2 scale = glm::vec2(1.0f);
-      glm::vec2 offset = glm::vec2(0.0f);
-      
-
-      GLuint albedo;
-      GLuint normal;
-      GLuint ORM;
-      
-      float base_color[4];
-
-      bool has_diffuse_map = false;
-      
-      uint32_t diffuse_map_ID = 0;
-      uint32_t normal_map_ID = 0;
-      uint32_t orm_map_ID = 0;
-};
-
-struct Mesh
-{
-      std::vector<DrawCommand> draw_commands;
-      std::vector<uint32_t> material_IDs;
-      std::string Name;
-
-      GLuint mesh_VAO;
-      GLuint postion_BO;
-      GLuint tex_coord_BO;
-      GLuint normal_BO;
-      GLuint index_BO;
-
-      GLuint index_count;
-      GLuint vertex_count;
-};
-
-struct BoneInfo
-{
-      int parent;
-      int index;
-      std::string name;
-};
-
-struct Animation
-{
-      std::string name;
-      std::vector<std::vector<TRS>> frame_poses;
-      uint32_t skeleton_ID = 0;
-      int frame_count;
-};
-
-struct Skeleton
-{
-      std::vector<BoneInfo> bone_info;
-      std::vector<TRS> bind_pose;
-      std::vector<glm::mat4> inv_bind_mats;
-      std::string name;
-      GLuint bone_transform_SSBO;
-      GLuint inv_bind_pose_SSBO;
-      GLuint anim_pose_SSBO;
-      GLuint anim_trs_SSBO;
-      int bone_count;
-};
-
-struct SkinnedMesh
-{
-      std::vector<DrawCommand> draw_commands;
-      std::vector<uint32_t> material_IDs;
-      std::string Name;
-
-      uint32_t skeleton_ID = 0;
-
-      GLuint mesh_VAO;
-      GLuint postion_BO;
-      GLuint tex_coord_BO;
-      GLuint normal_BO;
-      GLuint bone_IDs;
-      GLuint bone_weights;
-      GLuint index_BO;
-
-      GLuint index_count;
-      GLuint vertex_count;      
-};
 
 struct Transform
 {
@@ -188,49 +77,8 @@ struct material_file_info
       };
 };
 
-struct MaterialLoadData
-{
-      std::string diffuse_path = "";
-      float scale[2] = {1.0f, 1.0f};
-      float offset[2] = {0.0f, 0.0f};
-      template<class Archive>
-      void serialize(Archive& ar)
-      {
-            ar(diffuse_path,
-               scale,
-               offset);
-      }
-};
-
-struct MeshData
-{
-      std::unordered_map<std::string, MaterialLoadData> material_load_map;
-      std::vector<DrawCommand> draw_commands;
-      std::vector<material_file_info> material_file_info;
-      std::vector<float> positions;
-      std::vector<float> tex_coords;
-      std::vector<float> normals;
-      std::vector<uint32_t> indices;
-      std::vector<uint32_t> material_IDs;
       
-      unsigned int index_count;
-      unsigned int vertex_count;
-
-      template<class Archive>
-      void serialize(Archive& ar)      
-      {
-            ar(material_load_map,
-               draw_commands,
-               material_file_info,
-               positions,
-               tex_coords,
-               normals,
-               indices,
-               material_IDs);
-      };
-};
-      
-void LoadMeshAsync(Scene& scene, MeshData& mesh_result, const std::string& filename);
+void LoadMeshAsync(MeshData& mesh_result, const std::string& filename);
 
 uint32_t UploadMesh(Scene& scene, MeshData& mesh_data);
 
