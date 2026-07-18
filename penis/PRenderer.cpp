@@ -491,10 +491,10 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             const Instance* instance = &m_scene->instances[instance_ID];
             const SkinnedMesh* skinned_mesh = &m_scene->skinned_meshes[instance->skinned_mesh_ID];
             const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh->skeleton_ID];
-            // const Animation* animation = &m_scene->animations[1];
-            // vector<TRS> pose = animation->frame_poses[2];
+            const Animation* animation = &m_scene->animations[0];
+            vector<TRS> pose = animation->frame_poses[2];
 
-            vector<TRS> pose(skeleton->bind_pose);
+            // vector<TRS> pose(skeleton->bind_pose);
             
             
             FK(skeleton->bone_info, pose);

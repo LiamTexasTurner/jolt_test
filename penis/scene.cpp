@@ -482,7 +482,7 @@ uint32_t UploadMesh(Scene& scene, MeshData& mesh_data)
 
             string skeleton_name = filesystem::path(mesh_data.skeleton_path).stem().string();
             cout << skeleton_name << endl;
-            auto [it, inserted] = scene.skeleton_skinned_mesh_map.try_emplace(mesh_data.skeleton_path);
+            auto [it, inserted] = scene.skeleton_skinned_mesh_map.try_emplace(filesystem::path(mesh_data.skeleton_path).stem().string());
             if(inserted)
             {
                   SkeletonData skeleton_data;
@@ -1048,169 +1048,6 @@ void LoadSkinnedMeshes(Scene &scene, const string &filename, vector<uint32_t> *l
       }          
 }
 
-void LoadAnimation(Scene& scene, const std::string& filename, std::vector<uint32_t>* animation_IDs)
-{
-      cgltf_options options{};
-      cgltf_data* data = nullptr;
-
-      cgltf_result parse_result = cgltf_parse_file(&options, filename.c_str(), &data);
-      if(cgltf_parse_file(&options, filename.c_str(), &data) != cgltf_result_success)
-      {
-            std::cout << "cgltf_parse_file failed: " << parse_result << std::endl;
-      }
-      if(cgltf_load_buffers(&options, data, filename.c_str()) != cgltf_result_success)
-      {
-            cout << "failed to load buffers in load_animatins()" << endl;
-      }
-      cgltf_result buffer_load_result = cgltf_load_buffers(&options, data, filename.c_str());
-      if(buffer_load_result != cgltf_result_success)
-      {
-            cgltf_free(data);
-            return;
-      }
-
-
-      int anim_count = data->animations_count;     
-      vector<uint32_t> new_animation_IDs(anim_count);
-      for(int i = 0; i < anim_count; i++)
-      {
-            new_animation_IDs[i] = scene.animations.insert(Animation{});
-      }
-      
-      struct animation_channels
-      {
-            cgltf_animation_channel *translate;
-            cgltf_animation_channel *rotate;
-            cgltf_animation_channel *scale;
-            cgltf_interpolation_type interpolationType;
-      };
-      
-      cgltf_skin* skin = &data->skins[0];
-      if(data->skins_count <= 0) return;      
-      uint32_t skeleton_ID = 0;
-      auto it = scene.skeleton_skinned_mesh_map.find(string(skin->name));
-      if(it != scene.skeleton_skinned_mesh_map.end())
-      {
-            skeleton_ID = it->second;
-      }
-      else
-      {
-            // LoadSkeleton(scene, skin);
-      }
-      
-      const Skeleton* skeleton = &scene.skeletons[skeleton_ID];
-      int bone_count = skeleton->bone_count;
-      for(int anim_index = 0; anim_index < anim_count; anim_index++)
-      {
-            Animation& scene_animation = scene.animations[new_animation_IDs[anim_index]];
-            scene_animation.skeleton_ID = skeleton_ID;
-            cgltf_animation* anim_data = &data->animations[anim_index];
-
-            float anim_duration = 0.0f;
-            vector<animation_channels> bone_channels(bone_count);
-
-            for(int channel_index = 0; channel_index < anim_data->channels_count; channel_index++)
-            {
-                  cgltf_animation_channel* channel = &anim_data->channels[channel_index];
-                  int bone_index = -1;
-                  for(int k = 0; k < bone_count; k++)
-                  {
-                        if(anim_data->channels[channel_index].target_node == skin->joints[k])
-                        {
-                              bone_index = k;
-                              break;
-                        }
-                  }
-                  if(bone_index == -1) continue; //because of chips ProperlyRiggedMarine being index -1??????
-
-                  bone_channels[bone_index].interpolationType = anim_data->channels[channel_index].sampler->interpolation;
-
-                  if(anim_data->channels[channel_index].sampler->interpolation != cgltf_interpolation_type_max_enum)
-                  {
-                        if(channel->target_path == cgltf_animation_path_type_translation)
-                        {
-                              bone_channels[bone_index].translate = &anim_data->channels[channel_index];
-                        }
-                        else if(channel->target_path == cgltf_animation_path_type_rotation)
-                        {
-                              bone_channels[bone_index].rotate = &anim_data->channels[channel_index];
-                        }
-                        else if(channel->target_path == cgltf_animation_path_type_scale)
-                        {
-                              bone_channels[bone_index].scale = &anim_data->channels[channel_index];
-                        }
-                  }
-
-                  float t = 0.0f;
-                  cgltf_bool r = cgltf_accessor_read_float(channel->sampler->input,
-                                                           channel->sampler->input->count - 1,
-                                                           &t,
-                                                           1);
-
-                  if(!r) continue;
-                  anim_duration = (t > anim_duration) ? t : anim_duration;
-            }
-            if(anim_data->name != nullptr)
-            {
-                  scene_animation.name = string(anim_data->name);
-            }
-
-            int frame_count = (int)(anim_duration*1000.0f/ANIMDELAY);
-            scene_animation.frame_count = frame_count;
-            scene_animation.frame_poses.resize(frame_count);
-
-            for(int j = 0; j < frame_count; j++)
-            {
-                  scene_animation.frame_poses[j].resize(bone_count);
-                  float time = ((float) j * ANIMDELAY/1000.0f);
-                  for(int k = 0; k < bone_count; k++)
-                  {
-                        glm::vec3 translation = glm::vec3(skin->joints[k]->translation[0],
-                                                          skin->joints[k]->translation[1],
-                                                          skin->joints[k]->translation[2]);
-                        
-                        glm::quat rotation = glm::quat(skin->joints[k]->rotation[0],
-                                                       skin->joints[k]->rotation[1],
-                                                       skin->joints[k]->rotation[2],
-                                                       skin->joints[k]->rotation[3]);
-                        
-                        glm::vec3 scale = glm::vec3(skin->joints[k]->scale[0],
-                                                    skin->joints[k]->scale[1],
-                                                    skin->joints[k]->scale[2]);
-
-                        if(bone_channels[k].translate)
-                        {
-                              get_pose_at_time(bone_channels[k].interpolationType,
-                                               bone_channels[k].translate->sampler->input,
-                                               bone_channels[k].translate->sampler->output,
-                                               time,
-                                               &translation);
-                        }
-                        if(bone_channels[k].rotate)
-                        {
-                              get_pose_at_time(bone_channels[k].interpolationType,
-                                               bone_channels[k].rotate->sampler->input,
-                                               bone_channels[k].rotate->sampler->output,
-                                               time,
-                                               &rotation);
-                        }
-                        if(bone_channels[k].scale)
-                        {
-                              get_pose_at_time(bone_channels[k].interpolationType,
-                                               bone_channels[k].scale->sampler->input,
-                                               bone_channels[k].scale->sampler->output,
-                                               time,
-                                               &scale);
-                        }
-
-                        scene_animation.frame_poses[j][k] = TRS{glm::vec4(translation, 1.0f),
-                                                                glm::quat(rotation),
-                                                                glm::vec4(scale, 1.0f)}; 
-                  }
-            }
-      }
-      cgltf_free(data);
-}
       
 uint32_t LoadSkeleton(Scene& scene, SkeletonData& skeleton_data)
 {
@@ -1377,6 +1214,32 @@ unsigned int texture_from_file(std::string uri, const std::string &directory, bo
       }
 
       return textureID;
+}
+
+
+void LoadAnimation(Scene& scene, const std::string& path)
+{
+      AnimationData animation_data;
+      ifstream is(path, ios::binary);
+      cereal::BinaryInputArchive archive(is);
+      archive(animation_data);
+
+      Animation animation;
+      animation.frame_count = animation_data.frame_count;
+      animation.name = animation_data.name;
+      animation.frame_poses = animation_data.frame_poses;
+
+      auto it = scene.skeleton_skinned_mesh_map.find(animation_data.skeleton_name);
+      if(it != scene.skeleton_skinned_mesh_map.end())
+      {
+            animation.skeleton_ID = it->second;
+      }
+      else
+      {
+            assert(false && "tried to add animations to skeleton that dosent exist");
+      }
+
+      scene.animations.insert(animation);
 }
 
 

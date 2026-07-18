@@ -96,6 +96,10 @@ public:
                         entities.emplace_back(Entity(new_instance_ID));
                   };
             }
+
+            {
+                  LoadAnimation(*m_scene, "../resources/chips_2/animations/idle.panim");
+            }
             
 
             

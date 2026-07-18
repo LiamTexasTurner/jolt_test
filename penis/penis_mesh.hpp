@@ -168,14 +168,31 @@ struct Mesh
       unsigned int vertex_count;
 };
 
+struct AnimationData
+{
+      std::vector<std::vector<TRS>> frame_poses;
+      std::string name;
+      std::string skeleton_name;
+      int frame_count;
 
+      template<class Archive>
+      void serialize(Archive& ar)
+      {
+            ar(frame_poses,
+               name,
+               skeleton_name,
+               frame_count);
+      };
+};
 
 struct Animation
 {
-      std::string name;
       std::vector<std::vector<TRS>> frame_poses;
+      std::string name;
       uint32_t skeleton_ID = 0;
       int frame_count;
+
+  
 };
 
 struct Skeleton
