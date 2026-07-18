@@ -37,4 +37,12 @@ struct TRS
       glm::vec4 translation;
       glm::quat rotation;
       glm::vec4 scale;
+
+      template<class Archive>
+      void serialize(Archive& ar)
+      {
+            ar(translation,
+               rotation,
+               scale);
+      };
 };

@@ -109,7 +109,7 @@ struct BoneInfo
 struct SkeletonData
 {
       std::vector<BoneInfo> bone_info;
-      // std::vector<TRS> bind_pose;
+      std::vector<TRS> bind_pose;
       std::vector<glm::mat4> inv_bind_mats;
       std::string name;
       int bone_count;
@@ -117,7 +117,7 @@ struct SkeletonData
       void serialize(Archive& ar)      
       {
             ar(bone_info,
-               // bind_pose,
+               bind_pose,
                inv_bind_mats,
                name,
                bone_count);
@@ -181,6 +181,7 @@ struct Animation
 struct Skeleton
 {
       std::vector<BoneInfo> bone_info;
+      std::vector<TRS> bind_pose;
       std::vector<glm::mat4> inv_bind_mats;
       std::string name;
       unsigned int bone_transform_SSBO;

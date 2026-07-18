@@ -5,6 +5,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include <glm/gtx/matrix_decompose.hpp>
 
 #include "animation.hpp"
 
@@ -490,10 +491,13 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             const Instance* instance = &m_scene->instances[instance_ID];
             const SkinnedMesh* skinned_mesh = &m_scene->skinned_meshes[instance->skinned_mesh_ID];
             const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh->skeleton_ID];
-            const Animation* animation = &m_scene->animations[1];
-     
-            vector<TRS> pose = animation->frame_poses[2];            
-            FK(skeleton->bone_info, pose);
+            // const Animation* animation = &m_scene->animations[1];
+            // vector<TRS> pose = animation->frame_poses[2];
+
+            vector<TRS> pose(skeleton->bind_pose);
+            
+            
+            // FK(skeleton->bone_info, pose);
             DeformMeshGPU(skeleton, pose, m_skin_compute);            
             
             Transform* transform = &m_scene->transforms[instance->transform_ID];

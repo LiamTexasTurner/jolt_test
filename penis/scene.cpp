@@ -1220,6 +1220,7 @@ uint32_t LoadSkeleton(Scene& scene, SkeletonData& skeleton_data)
       new_skeleton.bone_count = skeleton_data.bone_count;
       new_skeleton.bone_info = skeleton_data.bone_info;
       new_skeleton.inv_bind_mats = skeleton_data.inv_bind_mats;
+      new_skeleton.bind_pose = skeleton_data.bind_pose;
       
 
       glGenBuffers(1, &new_skeleton.inv_bind_pose_SSBO);
