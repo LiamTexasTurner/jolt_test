@@ -22,6 +22,9 @@
 #include "penis/job_system.h"
 
 
+#include <vector>
+
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -132,7 +135,6 @@ int main()
       
       glfwSwapInterval(0);
 
-
       IMGUI_CHECKVERSION();
       ImGui::CreateContext();
       ImGuiIO& io = ImGui::GetIO();
@@ -155,9 +157,8 @@ int main()
 
       IGameMode* game_mode = NewGameMode();
       game_mode->Init(&scene, window, renderer);
-      
-      
-      
+     
+
       while(!glfwWindowShouldClose(window))
       {
             now = glfwGetTime();

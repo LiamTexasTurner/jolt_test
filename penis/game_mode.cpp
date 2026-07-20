@@ -94,6 +94,15 @@ public:
                         entities.emplace_back(Entity(new_instance_ID));
                   }                 
             };
+
+            //animation graphs
+            {
+                  AnimationGraph graph(scene->skeletons[0].bone_count);
+                  scene->animation_graphs.insert(graph);
+                  scene->animation_graphs.insert(graph);
+                  scene->animation_graphs.insert(graph);
+                  scene->animation_graphs.insert(graph);
+            }
                   
             AddSkybox(*m_scene, &current_skybox);
             
@@ -132,6 +141,21 @@ public:
             {
                   m_renderer->toggle_skinned();
             }
+            
+            
+            JobSystem::Dispatch(m_scene->animation_graphs.size(),
+                                1,
+                                [this, dt]
+                                (JobDispatchArgs args, Arena& arena)
+            {
+                  AnimationGraph& graph = m_scene->animation_graphs[args.jobIndex];
+                  TickAnimGraph(arena, graph, dt);
+            });
+
+            JobSystem::Wait();
+      
+
+            
       }
 };
 

@@ -7,6 +7,7 @@
 #include <sstream>
 #include <assert.h>
 
+
 #ifdef _WIN32
 #define NOMINMAX
 #include <Windows.h>
@@ -59,10 +60,16 @@ private:
 	std::mutex lock; // this just works better than a spinlock here (on windows)
 };
 
+struct ThreadContext
+{
+      Arena arena;
+};
+
 namespace JobSystem
 {
+      std::vector<ThreadContext> thread_context;
 	uint32_t numThreads = 0;    // number of worker threads, it will be initialized in the Initialize() function
-	ThreadSafeRingBuffer<std::function<void()>, 256> jobPool;    // a thread safe queue to put pending jobs onto the end (with a capacity of 256 jobs). A worker thread can grab a job from the beginning
+	ThreadSafeRingBuffer<std::function<void(Arena&)>, 256> jobPool;    // a thread safe queue to put pending jobs onto the end (with a capacity of 256 jobs). A worker thread can grab a job from the beginning
 	std::condition_variable wakeCondition;    // used in conjunction with the wakeMutex below. Worker threads just sleep when there is no job, and the main thread can wake them up
 	std::mutex wakeMutex;    // used in conjunction with the wakeCondition above
 	uint64_t currentLabel = 0;    // tracks the state of execution of the main thread
@@ -80,31 +87,34 @@ namespace JobSystem
 		// Calculate the actual number of worker threads we want:
 		numThreads = std::max(1u, numCores);
 
+            thread_context.resize(numThreads);
+
 		// Create all our worker threads while immediately starting them:
 		for (uint32_t threadID = 0; threadID < numThreads; ++threadID)
 		{
-			std::thread worker([] {
+			std::thread worker([threadID] {
 
-				std::function<void()> job; // the current job for the thread, it's empty at start.
+                        Arena &arena = thread_context[threadID].arena;
 
-										   // This is the infinite loop that a worker thread will do 
-				while (true)
-				{
-					if (jobPool.pop_front(job)) // try to grab a job from the jobPool queue
-					{
-						// It found a job, execute it:
-						job(); // execute job
-						finishedLabel.fetch_add(1); // update worker label state
-					}
-					else
-					{
-						// no job, put thread to sleep
-						std::unique_lock<std::mutex> lock(wakeMutex);
-						wakeCondition.wait(lock);
-					}
-				}
+                        std::function<void(Arena&)> job;
 
-			});
+                        while(true)
+                        {
+                              if(jobPool.pop_front(job))
+                              {
+                                    arena_reset(&arena);
+
+                                    job(arena);
+
+                                    finishedLabel.fetch_add(1);
+                              }
+                              else
+                              {
+                                    std::unique_lock<std::mutex> lock(wakeMutex);
+                                    wakeCondition.wait(lock);
+                              }
+                        }
+                  });
 
 #ifdef _WIN32
 			// Do Windows-specific thread setup:
@@ -137,7 +147,7 @@ namespace JobSystem
 		std::this_thread::yield(); // allow this thread to be rescheduled
 	}
 
-	void Execute(const std::function<void()>& job)
+	void Execute(const std::function<void(Arena&)>& job)
 	{
 		// The main thread label state is updated:
 		currentLabel += 1;
@@ -159,7 +169,7 @@ namespace JobSystem
 		while (IsBusy()) { poll(); }
 	}
 
-	void Dispatch(uint32_t jobCount, uint32_t groupSize, const std::function<void(JobDispatchArgs)>& job)
+	void Dispatch(uint32_t jobCount, uint32_t groupSize, const std::function<void(JobDispatchArgs, Arena&)>& job)
 	{
 		if (jobCount == 0 || groupSize == 0)
 		{
@@ -175,7 +185,7 @@ namespace JobSystem
 		for (uint32_t groupIndex = 0; groupIndex < groupCount; ++groupIndex)
 		{
 			// For each group, generate one real job:
-			const auto& jobGroup = [jobCount, groupSize, job, groupIndex]() {
+			const auto& jobGroup = [jobCount, groupSize, job, groupIndex](Arena& arena) {
 
 				// Calculate the current group's offset into the jobs:
 				const uint32_t groupJobOffset = groupIndex * groupSize;
@@ -188,7 +198,7 @@ namespace JobSystem
 				for (uint32_t i = groupJobOffset; i < groupJobEnd; ++i)
 				{
 					args.jobIndex = i;
-					job(args);
+					job(args, arena);
 				}
 			};
 
@@ -199,3 +209,4 @@ namespace JobSystem
 		}
 	}
 }
+

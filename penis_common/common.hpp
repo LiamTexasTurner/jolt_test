@@ -32,7 +32,7 @@ namespace glm
 
 };
 
-struct TRS
+struct alignas(16)TRS
 {
       glm::vec4 translation;
       glm::quat rotation;

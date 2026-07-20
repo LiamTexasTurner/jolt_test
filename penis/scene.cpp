@@ -177,16 +177,17 @@ void load_attribute(cgltf_accessor* attribute, int num_comp, vector<T>& dst)
 
 void Scene::Init()
 {
-      diffuse_maps   = packed_freelist<DiffuseMap>(512);
-      materials      = packed_freelist<Material>(512);
-      meshes         = packed_freelist<Mesh>(512);
-      skeletons      = packed_freelist<Skeleton>(512);
-      skinned_meshes = packed_freelist<SkinnedMesh>(512);
-      animations     = packed_freelist<Animation>(512);
-      transforms     = packed_freelist<Transform>(4096);
-      instances      = packed_freelist<Instance>(4096);
-      cameras        = packed_freelist<Camera>(32);
-      skyboxes       = packed_freelist<Skybox>(32);
+      diffuse_maps     = packed_freelist<DiffuseMap>(512);
+      materials        = packed_freelist<Material>(512);
+      meshes           = packed_freelist<Mesh>(512);
+      skeletons        = packed_freelist<Skeleton>(512);
+      skinned_meshes   = packed_freelist<SkinnedMesh>(512);
+      animations       = packed_freelist<Animation>(512);
+      animation_graphs = packed_freelist<AnimationGraph>(512);
+      transforms       = packed_freelist<Transform>(4096);
+      instances        = packed_freelist<Instance>(4096);
+      cameras          = packed_freelist<Camera>(32);
+      skyboxes         = packed_freelist<Skybox>(32);
 
       //defualts
 

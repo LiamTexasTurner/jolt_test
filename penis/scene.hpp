@@ -23,6 +23,7 @@
 #include <unordered_map>
 
 #include "penis_mesh.hpp"
+#include "animation_graph.hpp"
 
 
 struct Transform
@@ -48,15 +49,20 @@ struct Opaque
 class Scene
 {
 public:
-      packed_freelist<DiffuseMap> diffuse_maps;
-      packed_freelist<Material> materials;
-      packed_freelist<Mesh> meshes;
-      packed_freelist<SkinnedMesh> skinned_meshes;
-      packed_freelist<Animation> animations;
       packed_freelist<Transform> transforms;
       packed_freelist<Instance> instances;
-      packed_freelist<Camera> cameras;
+      
+      packed_freelist<DiffuseMap> diffuse_maps;
+      packed_freelist<Material> materials;
+      
+      packed_freelist<Mesh> meshes;
+      
+      packed_freelist<SkinnedMesh> skinned_meshes;
       packed_freelist<Skeleton> skeletons;
+      packed_freelist<Animation> animations;      
+      packed_freelist<AnimationGraph> animation_graphs;
+
+      packed_freelist<Camera> cameras;
       packed_freelist<Skybox> skyboxes;
 
       uint32_t main_camera_ID = 0;;
