@@ -31,7 +31,7 @@ void TickAnimGraph(Arena& arena, AnimationGraph& graph, float dt)
       ArenaArray<TRS> out_pose_ls = CreateArenaArray<TRS>(arena, graph.bone_count);
       memset(out_pose_ls.items, 0, out_pose_ls.capacity * sizeof(*out_pose_ls.items));
 
-      AnimationClip& clip = graph.clips[12];
+      AnimationClip& clip = graph.clips[13];
       TickClipTime(clip, dt, true);
 
       cout << clip.current_time << endl;
