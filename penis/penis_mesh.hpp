@@ -188,11 +188,9 @@ struct AnimationData
 struct Animation
 {
       std::vector<std::vector<TRS>> frame_poses;
-      std::string name;
+      std::string name = "";
       uint32_t skeleton_ID = 0;
-      int frame_count;
-
-  
+      int frame_count = 0;  
 };
 
 struct Skeleton
@@ -215,6 +213,7 @@ struct SkinnedMesh
       std::string Name;
 
       uint32_t skeleton_ID = 0;
+      uint32_t anim_graph_ID = 0;
 
       unsigned int mesh_VAO;
       unsigned int postion_BO;

@@ -85,11 +85,13 @@ struct material_file_info
 
 uint32_t LoadMesh(Scene& scene, MeshData& mesh_data);
 
+uint32_t LoadSkeletalMesh(Scene& scene, MeshData& mesh_data, uint32_t anim_graph = 0);
+
 uint32_t LoadSkeleton(Scene& scene, SkeletonData& skeleton_data);
 
-void LoadAnimation(Scene& scene, const std::string& path);
+uint32_t LoadAnimation(Scene& scene, const std::string& path);
 
-void LoadAnimations(Scene& scene, const std::string& path);
+std::vector<uint32_t> LoadAnimations(Scene& scene, const std::string& path);
 
 void AddSkybox(Scene& scene, uint32_t* new_skybox_ID);
 

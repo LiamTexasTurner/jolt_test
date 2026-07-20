@@ -38,14 +38,38 @@ public:
 
             m_first_update = true;
 
+            uint32_t chips_skeleton = 0;
+            vector<uint32_t> chips_animations;
+            
+
+            //skeletons
+            {
+                  SkeletonData skeleton_data;
+                  std::ifstream is("../resources/skeletons/chips_rig.pskeleton", ios::binary);
+                  cereal::BinaryInputArchive i_archive(is);
+                  i_archive(skeleton_data);
+
+                  chips_skeleton = LoadSkeleton(*m_scene, skeleton_data);
+
+                  chips_animations = LoadAnimations(*m_scene, "../resources/chips_2/animations/");
+            }
+
+
             //Chips
             {
                   MeshData chips_mesh;
                   std::ifstream is("../resources/chips_2/bin/chips_2.pbin", ios::binary);
                   cereal::BinaryInputArchive i_archive(is);
                   i_archive(chips_mesh);
+
+                  AnimationGraph chips_graph(&m_scene->animations,
+                                             scene->skeletons[0].bone_count,
+                                             chips_skeleton,
+                                             chips_animations);
                   
-                  uint32_t chips_ID = LoadMesh(*m_scene, chips_mesh);
+                  uint32_t anim_graph_ID = scene->animation_graphs.insert(chips_graph);
+                  
+                  uint32_t chips_ID = LoadSkeletalMesh(*m_scene, chips_mesh, anim_graph_ID);
                   //Instances
                   {
                         uint32_t new_instance_ID = 0;
@@ -66,7 +90,6 @@ public:
                   };
                   
                   // LoadAnimation(*m_scene, "../resources/chips_2/animations/idle.panim");
-                  LoadAnimations(*m_scene, "../resources/chips_2/animations/");
             };
 
             //pilot
@@ -95,14 +118,7 @@ public:
                   }                 
             };
 
-            //animation graphs
-            {
-                  AnimationGraph graph(scene->skeletons[0].bone_count);
-                  scene->animation_graphs.insert(graph);
-                  scene->animation_graphs.insert(graph);
-                  scene->animation_graphs.insert(graph);
-                  scene->animation_graphs.insert(graph);
-            }
+            
                   
             AddSkybox(*m_scene, &current_skybox);
             

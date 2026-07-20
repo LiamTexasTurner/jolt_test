@@ -399,13 +399,126 @@ uint32_t LoadMesh(Scene& scene, MeshData& mesh_data)
             return new_mesh_ID;
       }
 }
+uint32_t LoadSkeletalMesh(Scene& scene, MeshData& mesh_data, uint32_t anim_graph)
+{
+      SkinnedMesh mesh_result;
+      mesh_result.vertex_count = mesh_data.vertex_count;
+      mesh_result.index_count = mesh_data.index_count;
+      mesh_result.draw_commands = mesh_data.draw_commands;
+      mesh_result.material_IDs = mesh_data.material_IDs;
+      mesh_result.anim_graph_ID = anim_graph;
+      
+
+      for(DrawCommand& cmd : mesh_data.draw_commands)
+      {
+
+            auto it = mesh_data.material_load_map.find(cmd.material_name);
+            if(it != mesh_data.material_load_map.end())
+            {
+                  MaterialLoadData& data = it->second;
+
+                  GLuint texture_ID = create_texture(data.diffuse_path.c_str());
+
+                  DiffuseMap new_diffuse_map;
+                  new_diffuse_map.DiffuseMapTO = texture_ID;                  
+                  new_diffuse_map.has_transparency = false;
+                  uint32_t new_diffuse_map_ID = scene.diffuse_maps.insert(new_diffuse_map);
+
+                  Material new_material;
+                  new_material.has_diffuse_map = data.has_diffuse_map;
+                  new_material.diffuse_map_ID = new_diffuse_map_ID;
+
+                  new_material.offset = glm::vec2(data.offset[0], data.offset[1]);
+                  new_material.scale = glm::vec2(data.scale[0], data.scale[1]);
+
+
+                  uint32_t new_material_ID = scene.materials.insert(new_material);
+                  mesh_result.material_IDs.push_back(new_material_ID);
+
+            }
+            else
+            {
+                  Material new_material;
+                  new_material.has_diffuse_map = false;
+                  uint32_t new_material_ID = scene.materials.insert(new_material);
+                  mesh_result.material_IDs.push_back(new_material_ID);
+            }
+      }
+
+
+      string skeleton_name = filesystem::path(mesh_data.skeleton_path).stem().string();
+      cout << skeleton_name << endl;
+      auto [it, inserted] = scene.skeleton_skinned_mesh_map.try_emplace(filesystem::path(mesh_data.skeleton_path).stem().string());
+      if(inserted)
+      {
+            SkeletonData skeleton_data;
+            std::ifstream is(mesh_data.skeleton_path, ios::binary);
+            cereal::BinaryInputArchive i_archive(is);
+            i_archive(skeleton_data);
+
+            mesh_result.skeleton_ID = LoadSkeleton(scene, skeleton_data);
+      }
+      else
+      {
+            mesh_result.skeleton_ID = it->second;
+      }
+      
+      glGenVertexArrays(1, &mesh_result.mesh_VAO);
+      glGenBuffers(1, &mesh_result.postion_BO);
+      glGenBuffers(1, &mesh_result.tex_coord_BO);
+      glGenBuffers(1, &mesh_result.normal_BO);
+      glGenBuffers(1, &mesh_result.bone_IDs);
+      glGenBuffers(1, &mesh_result.bone_weights);
+      glGenBuffers(1, &mesh_result.index_BO);
+
+      glBindVertexArray(mesh_result.mesh_VAO);
+
+      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.postion_BO);
+      glBufferData(GL_ARRAY_BUFFER, mesh_data.positions.size() * sizeof(float), mesh_data.positions.data(), GL_STATIC_DRAW);
+      glVertexAttribPointer(SCENE_POSITION_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
+      glEnableVertexAttribArray(SCENE_POSITION_ATTRIB_LOCATION);
+
+      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.tex_coord_BO);
+      glBufferData(GL_ARRAY_BUFFER, mesh_data.tex_coords.size() * sizeof(mesh_data.tex_coords[0]), mesh_data.tex_coords.data(), GL_STATIC_DRAW);
+      glVertexAttribPointer(SCENE_TEXCOORD_ATTRIB_LOCATION, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
+      glEnableVertexAttribArray(SCENE_TEXCOORD_ATTRIB_LOCATION);
+
+      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.normal_BO);
+      glBufferData(GL_ARRAY_BUFFER, mesh_data.normals.size() * sizeof(mesh_data.normals[0]), mesh_data.normals.data(), GL_STATIC_DRAW);
+      glVertexAttribPointer(SCENE_NORMAL_ATTRIB_LOCATION, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
+      glEnableVertexAttribArray(SCENE_NORMAL_ATTRIB_LOCATION);
+
+      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.bone_IDs);
+      glBufferData(GL_ARRAY_BUFFER, mesh_data.bone_IDs.size() * sizeof(mesh_data.bone_IDs[0]), mesh_data.bone_IDs.data(), GL_STATIC_DRAW);
+      glVertexAttribIPointer(SCENE_BONE_ID_ATTRIB_LOCATION, MAX_BONE_INFLUENCE, GL_INT, sizeof(int) * MAX_BONE_INFLUENCE, nullptr);
+      glEnableVertexAttribArray(SCENE_BONE_ID_ATTRIB_LOCATION);
+      
+      
+      glBindBuffer(GL_ARRAY_BUFFER, mesh_result.bone_weights);
+      glBufferData(GL_ARRAY_BUFFER, mesh_data.bone_weights.size() * sizeof(mesh_data.bone_weights[0]), mesh_data.bone_weights.data(), GL_STATIC_DRAW);
+      glVertexAttribPointer(SCENE_BONE_WEIGHTS_ATTRIB_LOCATION, MAX_BONE_INFLUENCE, GL_FLOAT, GL_FALSE, sizeof(float) * MAX_BONE_INFLUENCE, nullptr);
+      glEnableVertexAttribArray(SCENE_BONE_WEIGHTS_ATTRIB_LOCATION);
+
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_result.index_BO);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh_data.indices.size() * sizeof(uint32_t), mesh_data.indices.data(), GL_STATIC_DRAW);
+
+      glBindVertexArray(0);
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+      
+      
+      
+      uint32_t new_mesh_ID = scene.skinned_meshes.insert(mesh_result);
+
+      return new_mesh_ID;
+}
       
       
 uint32_t LoadSkeleton(Scene& scene, SkeletonData& skeleton_data)
 {
       Skeleton new_skeleton;
 
-      new_skeleton.name = skeleton_data.bone_count;
+      new_skeleton.name = skeleton_data.name;
       new_skeleton.bone_count = skeleton_data.bone_count;
       new_skeleton.bone_info = skeleton_data.bone_info;
       new_skeleton.inv_bind_mats = skeleton_data.inv_bind_mats;
@@ -569,7 +682,7 @@ unsigned int texture_from_file(std::string uri, const std::string &directory, bo
 }
 
 
-void LoadAnimation(Scene& scene, const std::string& path)
+uint32_t LoadAnimation(Scene& scene, const std::string& path)
 {
       AnimationData animation_data;
       ifstream is(path, ios::binary);
@@ -591,15 +704,18 @@ void LoadAnimation(Scene& scene, const std::string& path)
             assert(false && "tried to add animations to skeleton that dosent exist");
       }
 
-      scene.animations.insert(animation);
+      return scene.animations.insert(animation);
 }
 
-void LoadAnimations(Scene& scene, const std::string& path)
+std::vector<uint32_t> LoadAnimations(Scene& scene, const std::string& path)
 {
+      std::vector<uint32_t> animation_IDs;
       for(const filesystem::directory_entry& entry : filesystem::directory_iterator(path))
       {
-            LoadAnimation(scene, entry.path().string());
+            animation_IDs.push_back(LoadAnimation(scene, entry.path().string()));
       }
+
+      return animation_IDs;
 }
 
 
