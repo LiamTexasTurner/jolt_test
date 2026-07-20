@@ -46,6 +46,8 @@ struct AnimationGraph
                   clips[i].ID = i;
                   i++;
             }
+
+            out_pose.resize(bone_count);
       }
 
       packed_freelist<Animation>* animations;

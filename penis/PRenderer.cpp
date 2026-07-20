@@ -494,9 +494,6 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             const AnimationGraph* anim_graph = &m_scene->animation_graphs[skinned_mesh->anim_graph_ID];
 
             vector<TRS> pose = anim_graph->out_pose;
-
-            // vector<TRS> pose(skeleton->bind_pose);
-            
             
             FK(skeleton->bone_info, pose);
             DeformMeshGPU(skeleton, pose, m_skin_compute);            
