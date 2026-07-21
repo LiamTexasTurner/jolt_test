@@ -38,7 +38,7 @@ public:
 
             m_first_update = true;
 
-            uint32_t chips_skeleton = 0;
+            uint32_t chips_skeleton_ID = 0;
             vector<uint32_t> chips_animations;
             
 
@@ -49,7 +49,7 @@ public:
                   cereal::BinaryInputArchive i_archive(is);
                   i_archive(skeleton_data);
 
-                  chips_skeleton = LoadSkeleton(*m_scene, skeleton_data);
+                  chips_skeleton_ID = LoadSkeleton(*m_scene, skeleton_data);
 
                   chips_animations = LoadAnimations(*m_scene, "../resources/chips_2/animations/");
             }
@@ -62,15 +62,16 @@ public:
                   cereal::BinaryInputArchive i_archive(is);
                   i_archive(chips_mesh);
 
+                  Skeleton chips_skeleton = scene->skeletons[chips_skeleton_ID];
                   AnimationGraph chips_graph(&m_scene->animations,
-                                             scene->skeletons[0].bone_count,
-                                             chips_skeleton,
-                                             chips_animations);
-                  
-                  uint32_t anim_graph_ID = scene->animation_graphs.insert(chips_graph);
-                  
-                  uint32_t chips_ID = LoadSkeletalMesh(*m_scene, chips_mesh, anim_graph_ID);
+                                             chips_skeleton.bone_count,
+                                             chips_skeleton_ID,
+                                             chips_animations,
+                                             chips_skeleton.bone_info);                
+
+                  uint32_t chips_ID = LoadSkeletalMesh(*m_scene, chips_mesh, std::move(chips_graph));
                   //Instances
+                  for(int i = 0; i < 10; i++)
                   {
                         uint32_t new_instance_ID = 0;
 
@@ -84,12 +85,10 @@ public:
                         }
                               
                         uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-                        scene->transforms[new_instance_ID].translation = glm::vec3(1,1,0);
+                        scene->transforms[new_instance_ID].translation = glm::vec3(i + 1,1,0);
                         scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
                         entities.emplace_back(Entity(new_instance_ID));
-                  };
-                  
-                  // LoadAnimation(*m_scene, "../resources/chips_2/animations/idle.panim");
+                  }
             };
 
             //pilot
@@ -157,7 +156,14 @@ public:
             {
                   m_renderer->toggle_skinned();
             }
+
             
+            // for(int i = 0; i < m_scene->animation_graphs.size(); i++)
+            // {
+            //       AnimationGraph& graph = m_scene->animation_graphs[i];
+            //       TickAnimGraphSerial(graph, dt);
+                  
+            // }
             
             JobSystem::Dispatch(m_scene->animation_graphs.size(),
                                 1,

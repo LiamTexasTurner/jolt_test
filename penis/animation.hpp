@@ -8,5 +8,5 @@
 
 void FK(std::span<const BoneInfo> bones, std::span<TRS> out_pose);
 
-void DeformMeshGPU(const Skeleton* skeleton, std::span<TRS> pose, GLuint* skinning_compute_shader);
+void DeformMeshGPU(const Skeleton* skeleton, std::span<const TRS> pose, GLuint* skinning_compute_shader);
 

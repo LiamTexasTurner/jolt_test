@@ -85,7 +85,7 @@ struct material_file_info
 
 uint32_t LoadMesh(Scene& scene, MeshData& mesh_data);
 
-uint32_t LoadSkeletalMesh(Scene& scene, MeshData& mesh_data, uint32_t anim_graph = 0);
+uint32_t LoadSkeletalMesh(Scene& scene, MeshData& mesh_data, AnimationGraph anim_graph);
 
 uint32_t LoadSkeleton(Scene& scene, SkeletonData& skeleton_data);
 

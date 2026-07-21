@@ -399,16 +399,16 @@ uint32_t LoadMesh(Scene& scene, MeshData& mesh_data)
             return new_mesh_ID;
       }
 }
-uint32_t LoadSkeletalMesh(Scene& scene, MeshData& mesh_data, uint32_t anim_graph)
+uint32_t LoadSkeletalMesh(Scene& scene, MeshData& mesh_data, AnimationGraph anim_graph)
 {
       SkinnedMesh mesh_result;
       mesh_result.vertex_count = mesh_data.vertex_count;
       mesh_result.index_count = mesh_data.index_count;
       mesh_result.draw_commands = mesh_data.draw_commands;
       mesh_result.material_IDs = mesh_data.material_IDs;
-      mesh_result.anim_graph_ID = anim_graph;
-      
 
+      mesh_result.anim_graph_ID = scene.animation_graphs.insert(std::move(anim_graph));
+      
       for(DrawCommand& cmd : mesh_data.draw_commands)
       {
 

@@ -25,15 +25,15 @@ struct StateMachine
 
 struct AnimationGraph
 {      
-      
-
       AnimationGraph() = default;
 
-      AnimationGraph(packed_freelist<Animation>* in_animations, int in_bone_count, uint32_t in_skeleton_ID, std::vector<uint32_t> in_anim_IDs) :
+      AnimationGraph(packed_freelist<Animation>* in_animations, int in_bone_count, uint32_t in_skeleton_ID,
+                     std::vector<uint32_t> in_anim_IDs, std::vector<BoneInfo> in_bone_info) :
             animations(in_animations),
             bone_count(in_bone_count),
             skeleton_ID(in_skeleton_ID),
-            anim_IDs(in_anim_IDs)
+            anim_IDs(in_anim_IDs),
+            bone_info(in_bone_info)
       {
             clips.resize(in_anim_IDs.size());
             int i = 0;
@@ -53,6 +53,7 @@ struct AnimationGraph
       packed_freelist<Animation>* animations;
       std::vector<uint32_t> anim_IDs;
       std::vector<TRS> out_pose;
+      std::vector<BoneInfo> bone_info;
       std::vector<AnimationClip> clips;
       std::unordered_map<std::string, uint32_t> anim_map;
 
@@ -61,3 +62,4 @@ struct AnimationGraph
       int bone_count;
 };
 void TickAnimGraph(Arena& arena, AnimationGraph& graph, float dt);
+void TickAnimGraphSerial( AnimationGraph& graph, float dt);

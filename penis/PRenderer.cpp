@@ -493,10 +493,9 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh->skeleton_ID];
             const AnimationGraph* anim_graph = &m_scene->animation_graphs[skinned_mesh->anim_graph_ID];
 
-            vector<TRS> pose = anim_graph->out_pose;
+            // FK(skeleton->bone_info, anim_graph->out_pose);
             
-            FK(skeleton->bone_info, pose);
-            DeformMeshGPU(skeleton, pose, m_skin_compute);            
+            DeformMeshGPU(skeleton, anim_graph->out_pose, m_skin_compute);            
             
             Transform* transform = &m_scene->transforms[instance->transform_ID];
             transform->scale = glm::vec3(1.0f);

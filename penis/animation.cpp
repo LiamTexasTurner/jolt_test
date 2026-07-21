@@ -25,7 +25,7 @@ void FK(std::span<const BoneInfo> bones, std::span<TRS> out_pose)
       }
 }
 
-void DeformMeshGPU(const Skeleton* skeleton, std::span<TRS> pose, GLuint* skinning_compute_shader)
+void DeformMeshGPU(const Skeleton* skeleton, std::span<const TRS> pose, GLuint* skinning_compute_shader)
 {
       glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_INV_BIND_POSE_BINDING, skeleton->inv_bind_pose_SSBO);
       glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, skeleton->bone_transform_SSBO);
