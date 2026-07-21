@@ -90,7 +90,11 @@ public:
                            const glm::vec3& light_pos,
                            const glm::vec3& dir_light_col);
 
+      std::vector<TRS> all_poses;
+
       void DeformMeshGPU(const Skeleton* skeleton, std::span<const TRS> poses, GLuint* skinning_compute_shader);
+
+      void DefromAllMeshesWithSkeleton();
       
       void BlitFrameBuffer(GLuint& read_buffer, GLuint draw_buffer, int width, int height);
 
