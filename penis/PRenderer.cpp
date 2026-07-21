@@ -13,7 +13,8 @@
 #include <string>
 #include <algorithm>
 #include <span>
-
+#include <chrono>
+#include <cstdint>
 
 using namespace std;
 
@@ -40,6 +41,45 @@ void PRenderer::Init(Scene* scene)
       glBindVertexArray(m_null_vao);
       glBindVertexArray(0);
 
+}
+void PRenderer::UpdateBuffers(Scene* scene)
+{
+      vector<glm::mat4> inv_bind_mats;
+      for(int i = 0; i < scene->skeletons.size(); i++)
+      {
+            Skeleton& skelton = scene->skeletons[i];
+            inv_bind_mats.reserve(skelton.inv_bind_mats.size());
+            inv_bind_mats.insert(inv_bind_mats.end(), skelton.inv_bind_mats.begin(), skelton.inv_bind_mats.end());
+      }
+
+      
+      glGenBuffers(1, &inv_bind_pose_SSBO);
+      glGenBuffers(1, &bone_transform_SSBO);
+      glGenBuffers(1, &anim_trs_SSBO);
+
+      {
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, inv_bind_pose_SSBO);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, inv_bind_pose_SSBO);
+            GLsizeiptr buffer_size = sizeof(glm::mat4) * inv_bind_mats.size();
+            glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, inv_bind_mats.data(), GL_STATIC_DRAW);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+      }
+
+      {
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, bone_transform_SSBO);
+            GLsizeiptr buffer_size = sizeof(glm::mat4) * inv_bind_mats.size();
+            glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);      
+      }
+      
+      {
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, anim_trs_SSBO);
+            GLsizeiptr buffer_size = sizeof(TRS) * inv_bind_mats.size();
+            glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, nullptr, GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);      
+      }
+      
 }
 
 void PRenderer::Resize(int width, int height) 
@@ -480,14 +520,15 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
       }
       
 
-
-      
-
-
       //draw skinned mesh
-      for(uint32_t instance_ID : skinned_opaque_draw_list)
+      glUseProgram(*m_skinning);
+      glUniformMatrix4fv(SCENE_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
+      glUniformMatrix4fv(SCENE_PROJECTON_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
+      glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
+      // for(uint32_t instance_ID : skinned_opaque_draw_list)
+      for(int i = 0; i < skinned_opaque_draw_list.size(); i++)
       {
-
+            uint32_t instance_ID = skinned_opaque_draw_list[i];
             const Instance* instance = &m_scene->instances[instance_ID];
             const SkinnedMesh* skinned_mesh = &m_scene->skinned_meshes[instance->skinned_mesh_ID];
             const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh->skeleton_ID];
@@ -509,9 +550,7 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
 
             glUseProgram(*m_skinning);
             glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
-            glUniformMatrix4fv(SCENE_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
-            glUniformMatrix4fv(SCENE_PROJECTON_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, skeleton->bone_transform_SSBO);
+            // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, skeleton->bone_transform_SSBO);
             
             glBindVertexArray(skinned_mesh->mesh_VAO);
             for(size_t mesh_draw_index = 0; mesh_draw_index < skinned_mesh->draw_commands.size(); mesh_draw_index++)
@@ -523,7 +562,7 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
                   glUniform2fv(SCENE_TEXCOORD_SCALE, 1, value_ptr(material->scale));
                   glUniform2fv(SCENE_TEXCOORD_OFFSET, 1, value_ptr(material->offset));
 
-                  glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
+                  
                   if(material->diffuse_map_ID == -1)
                   {
                         glBindTexture(GL_TEXTURE_2D, 0);
@@ -548,11 +587,8 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
       }
       glUseProgram(0);
       glBindVertexArray(0);
-
-      
       
       ResetRenderState();
-
 }
 
 void PRenderer::DrawTransparent(const glm::mat4& projection,
@@ -647,6 +683,24 @@ void PRenderer::DrawTransparent(const glm::mat4& projection,
       ResetRenderState();
 
 }
+
+void PRenderer::DeformMeshGPU(const Skeleton* skeleton, std::span<const TRS> poses, GLuint* skinning_compute_shader)
+{
+
+
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_INV_BIND_POSE_BINDING, inv_bind_pose_SSBO);
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, bone_transform_SSBO);
+      
+      GLsizeiptr buffer_size = sizeof(TRS) * skeleton->bone_count;
+      glBindBuffer(GL_SHADER_STORAGE_BUFFER, anim_trs_SSBO);
+      glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, buffer_size, poses.data());
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_TRS_BINDING, anim_trs_SSBO);      
+      
+      glUseProgram(*skinning_compute_shader);
+      glDispatchCompute((skeleton->bone_count + SKINNING_GROUP_SIZE_X - 1) / SKINNING_GROUP_SIZE_X, 1, 1);
+      glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+}
+
 void PRenderer::BlitFrameBuffer(GLuint& read_buffer, GLuint draw_buffer, int width, int height)
 {
       glBindFramebuffer(GL_READ_FRAMEBUFFER, read_buffer);

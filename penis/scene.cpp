@@ -451,12 +451,13 @@ uint32_t LoadSkeletalMesh(Scene& scene, MeshData& mesh_data, AnimationGraph anim
       auto [it, inserted] = scene.skeleton_skinned_mesh_map.try_emplace(filesystem::path(mesh_data.skeleton_path).stem().string());
       if(inserted)
       {
-            SkeletonData skeleton_data;
-            std::ifstream is(mesh_data.skeleton_path, ios::binary);
-            cereal::BinaryInputArchive i_archive(is);
-            i_archive(skeleton_data);
+            // SkeletonData skeleton_data;
+            // std::ifstream is(mesh_data.skeleton_path, ios::binary);
+            // cereal::BinaryInputArchive i_archive(is);
+            // i_archive(skeleton_data);
 
-            mesh_result.skeleton_ID = LoadSkeleton(scene, skeleton_data);
+            // mesh_result.skeleton_ID = LoadSkeleton(scene, skeleton_data);
+            assert(false && "no skeleton found");
       }
       else
       {

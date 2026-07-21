@@ -123,6 +123,8 @@ public:
             
             Camera main_camera(glm::vec3(0.0f, 2.0f, -10.0f), glm::vec3(0,1,0), glm::vec3(1,0,0), 0.0f, 0.0f, CamType::flying);
             m_scene->main_camera_ID = m_scene->cameras.insert((main_camera));
+
+            m_renderer->UpdateBuffers(scene);
       }
 
       void HandleEvent() override

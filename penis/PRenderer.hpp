@@ -30,6 +30,10 @@ public:
       unsigned int SCR_WIDTH;
       unsigned int SCR_HEIGHT;
 
+      GLuint bone_transform_SSBO;
+      GLuint inv_bind_pose_SSBO;
+      GLuint anim_trs_SSBO;
+
       GLuint back_buffer_single_samp_FBO;
       GLuint back_buffer_single_samp_CT;
       GLuint back_buffer_single_samp_DT;
@@ -62,6 +66,7 @@ public:
       void toggle_skinned(){draw_skinned = ! draw_skinned;}
       
       void Init(Scene* scene) override;
+      void UpdateBuffers(Scene* scene) override;
       void Resize(int width, int height) override;
       unsigned int Paint() override;
       
@@ -84,6 +89,8 @@ public:
                            const glm::mat4& light_space_matrix,
                            const glm::vec3& light_pos,
                            const glm::vec3& dir_light_col);
+
+      void DeformMeshGPU(const Skeleton* skeleton, std::span<const TRS> poses, GLuint* skinning_compute_shader);
       
       void BlitFrameBuffer(GLuint& read_buffer, GLuint draw_buffer, int width, int height);
 

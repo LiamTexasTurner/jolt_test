@@ -69,6 +69,7 @@ public:
       std::map<std::string, uint32_t> skeleton_skinned_mesh_map;
 
       void Init();
+      void InitSkinnedMeshBuffers();
 };
 
 struct material_file_info
