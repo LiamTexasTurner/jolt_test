@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <glad/glad.h>
 #include "opengl.h"
 #include <common.hpp>
@@ -40,11 +39,6 @@ struct Instance
       uint32_t mesh_ID = 0;
       uint32_t skinned_mesh_ID = 0;
       uint32_t anim_graph_ID = 0;
-};
-
-struct Opaque
-{
-      uint32_t instance_id = 0;
 };
 
 class Scene

@@ -533,36 +533,24 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
       glUniformMatrix4fv(SCENE_PROJECTON_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
       glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
       glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, bone_transform_SSBO);
-      for(int i = 0; i < skinned_opaque_draw_list.size(); i++)
+      for(int i = 0; i < skinned_mesh_instance_draw_list.size(); i++)
       {
-            uint32_t instance_ID = skinned_opaque_draw_list[i];
+            uint32_t instance_ID = skinned_mesh_instance_draw_list[i];
             const Instance* instance = &m_scene->instances[instance_ID];
             const SkinnedMesh* skinned_mesh = &m_scene->skinned_meshes[instance->skinned_mesh_ID];
             const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh->skeleton_ID];
             const AnimationGraph* anim_graph = &m_scene->animation_graphs[skinned_mesh->anim_graph_ID];
-
-            // FK(skeleton->bone_info, anim_graph->out_pose);
-            
-            // DeformMeshGPU(skeleton, anim_graph->out_pose, m_skin_compute);            
             
             Transform* transform = &m_scene->transforms[instance->transform_ID];
             transform->scale = glm::vec3(1.0f);
 
-            // glm::mat4 MW = glm::mat4(1.0f);
-            // MW = translate(-transform->rotation_origin) * MW;
-            // MW = mat4_cast(transform->rotation) * MW;
-            // MW = translate(transform->rotation_origin) * MW;
-            // MW = scale(transform->scale) * MW;
-            // MW = translate(transform->translation) * MW;
-      
-            glm::mat4 MW = glm::translate(glm::mat4(1.0f), glm::vec3(i, 0.0f, 0.0f)) *
-                           glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            
+            glm::mat4 MW = glm::mat4(1.0f);
+            MW = translate(-transform->rotation_origin) * MW;
+            MW = mat4_cast(transform->rotation) * MW;
+            MW = translate(transform->rotation_origin) * MW;
+            MW = scale(transform->scale) * MW;
+            MW = translate(transform->translation) * MW;
 
-            
-
-            
-            
             glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
             glUniform1i(SCENE_BONE_OFFSET_UNIFORM_LOCATION, skeleton->bone_count * i);
             

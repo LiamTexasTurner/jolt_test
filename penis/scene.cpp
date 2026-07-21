@@ -614,8 +614,6 @@ void AddSkinnedMeshInstance(Scene &scene, uint32_t skinned_mesh_ID, uint32_t *ne
 
       uint32_t new_transform_ID = scene.transforms.insert(new_transform);
 
-      
-
       Instance new_instance;
       new_instance.skinned_mesh_ID = skinned_mesh_ID;
       new_instance.transform_ID = new_transform_ID;
