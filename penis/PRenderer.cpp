@@ -41,13 +41,13 @@ void PRenderer::Init(Scene* scene)
       glBindVertexArray(m_null_vao);
       glBindVertexArray(0);
 
-      all_poses.reserve(4096 * 4096);
+      all_poses.reserve(4096);
 
 }
 void PRenderer::UpdateBuffers(Scene* scene)
 {
 
-      size_t buf_size = 4096 * 4096;
+      size_t buf_size = 4096 * 2;
       vector<glm::mat4> inv_bind_mats;
       for(int i = 0; i < scene->skeletons.size(); i++)
       {
@@ -56,7 +56,6 @@ void PRenderer::UpdateBuffers(Scene* scene)
             inv_bind_mats.insert(inv_bind_mats.end(), skelton.inv_bind_mats.begin(), skelton.inv_bind_mats.end());
       }
 
-      
       glGenBuffers(1, &inv_bind_pose_SSBO);
       glGenBuffers(1, &bone_transform_SSBO);
       glGenBuffers(1, &anim_trs_SSBO);
@@ -335,23 +334,7 @@ void PRenderer::CreateDrawList()
                   if(!it.second)
                   {
                         it.first->second.push_back(instance_index);
-                  }
-                  
-                  skinned_mesh_instance_draw_list.push_back(instance_index);
-                  
-                  // for(int skinned_mesh_draw_index = 0; skinned_mesh_draw_index < skinned_mesh.draw_commands.size(); skinned_mesh_draw_index++)
-                  // {
-                  //       const Material& material = m_scene->materials[skinned_mesh.material_IDs[skinned_mesh_draw_index]];
-                  //       const DiffuseMap& diffuse_map = m_scene->diffuse_maps[material.diffuse_map_ID];
-                  //       if(diffuse_map.has_transparency)
-                  //       {
-                  //             skinned_transparent_draw_list.push_back(instance_index);
-                  //       }
-                  //       else
-                  //       {
-                  //             skinned_opaque_draw_list.push_back(instance_index);
-                  //       }
-                  // }
+                  }                  
             }
       }
       glm::vec3 main_cam_pos = m_scene->cameras[m_scene->main_camera_ID].translation;
@@ -542,7 +525,7 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
       for(const auto& [skeleton_ID, skinned_mesh_indices] : skeleton_instance_map)
       {
             const Skeleton* skeleton = &m_scene->skeletons[skeleton_ID];
-            DefromAllMeshesWithSkeleton(skeleton, skinned_mesh_indices.size());
+            DefromAllMeshesWithSkeleton(skeleton, skinned_mesh_indices);
 
             glUseProgram(*m_skinning);
             glUniformMatrix4fv(SCENE_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
@@ -700,16 +683,16 @@ void PRenderer::DrawTransparent(const glm::mat4& projection,
 
 }
 
-void PRenderer::DefromAllMeshesWithSkeleton(const Skeleton* skeleton, int instances)
+void PRenderer::DefromAllMeshesWithSkeleton(const Skeleton* skeleton, span<const uint32_t> instances)
 {
 
       glUseProgram(*m_skin_compute);
       
       all_poses.clear();
-      for(int i = 0; i < instances; i++)
+      for(int i = 0; i < instances.size(); i++)
       {
-            uint32_t instance_ID = skinned_mesh_instance_draw_list[i];
-            const Instance* instance = &m_scene->instances[instance_ID];
+            uint32_t instance_index = instances[i];
+            const Instance* instance = &m_scene->instances[instance_index];
             const AnimationGraph* anim_graph = &m_scene->animation_graphs[instance->anim_graph_ID];      
             all_poses.insert(all_poses.end(), anim_graph->out_pose.begin(), anim_graph->out_pose.end());
       }
@@ -718,14 +701,14 @@ void PRenderer::DefromAllMeshesWithSkeleton(const Skeleton* skeleton, int instan
       glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_INV_BIND_POSE_BINDING, inv_bind_pose_SSBO);
       glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, bone_transform_SSBO);
       
-      GLsizeiptr buffer_size = sizeof(TRS) * (bone_count * instances);
+      GLsizeiptr buffer_size = sizeof(TRS) * (bone_count * instances.size());
       glBindBuffer(GL_SHADER_STORAGE_BUFFER, anim_trs_SSBO);
       glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, buffer_size, all_poses.data());
       glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_TRS_BINDING, anim_trs_SSBO);      
 
       
       glUniform1ui(SKINNING_COMP_BONE_COUNT_UNIFORM_LOCATION, bone_count);
-      glDispatchCompute((bone_count + SKINNING_GROUP_SIZE_X - 1) / SKINNING_GROUP_SIZE_X, instances, 1);
+      glDispatchCompute((bone_count + SKINNING_GROUP_SIZE_X - 1) / SKINNING_GROUP_SIZE_X, instances.size(), 1);
       glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 

@@ -5,6 +5,7 @@
 #include "preamble.glsl"
 #include "glm/glm.hpp"
 #include <unordered_map>
+#include <span>
 
 
 class PRenderer : public IRenderer
@@ -100,7 +101,7 @@ public:
 
       void DeformMeshGPU(const Skeleton* skeleton, std::span<const TRS> poses, GLuint* skinning_compute_shader);
 
-      void DefromAllMeshesWithSkeleton(const Skeleton* skeleton, int instances);
+      void DefromAllMeshesWithSkeleton(const Skeleton* skeleton,  std::span<const uint32_t> instances);
       
       void BlitFrameBuffer(GLuint& read_buffer, GLuint draw_buffer, int width, int height);
 
