@@ -213,7 +213,6 @@ struct SkinnedMesh
       std::string Name;
 
       uint32_t skeleton_ID = 0;
-      uint32_t anim_graph_ID = 0;
 
       unsigned int mesh_VAO;
       unsigned int postion_BO;

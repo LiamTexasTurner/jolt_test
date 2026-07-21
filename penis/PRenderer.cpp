@@ -298,9 +298,12 @@ void PRenderer::CreateDrawList()
       skinned_opaque_draw_list.clear();
       skinned_transparent_draw_list.clear();
       skinned_mesh_instance_draw_list.clear();
-      for(int instance_ID = 0; instance_ID < m_scene->instances.size(); instance_ID++)
+
+      skeleton_instance_map.clear();
+      
+      for(int instance_index = 0; instance_index < m_scene->instances.size(); instance_index++)
       {
-            const Instance& instance = m_scene->instances[instance_ID];
+            const Instance& instance = m_scene->instances[instance_index];
             
             if(m_scene->meshes.contains(instance.mesh_ID))
             {
@@ -313,11 +316,11 @@ void PRenderer::CreateDrawList()
                               const DiffuseMap& diffuse_map = m_scene->diffuse_maps[material.diffuse_map_ID];
                               if(diffuse_map.has_transparency)
                               {
-                                    transparent_draw_list.push_back(instance_ID);
+                                    transparent_draw_list.push_back(instance_index);
                               }
                               else
                               {
-                                    opaque_draw_list.push_back(instance_ID);
+                                    opaque_draw_list.push_back(instance_index);
                               }
                         }
                         
@@ -325,21 +328,30 @@ void PRenderer::CreateDrawList()
             }
             if(m_scene->skinned_meshes.contains(instance.skinned_mesh_ID))
             {
-                  skinned_mesh_instance_draw_list.push_back(instance_ID);
+                  
                   const SkinnedMesh& skinned_mesh = m_scene->skinned_meshes[instance.skinned_mesh_ID];
-                  for(int skinned_mesh_draw_index = 0; skinned_mesh_draw_index < skinned_mesh.draw_commands.size(); skinned_mesh_draw_index++)
+                  const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh.skeleton_ID];
+                  auto it = skeleton_instance_map.try_emplace(skinned_mesh.skeleton_ID, instance_index);
+                  if(!it.second)
                   {
-                        const Material& material = m_scene->materials[skinned_mesh.material_IDs[skinned_mesh_draw_index]];
-                        const DiffuseMap& diffuse_map = m_scene->diffuse_maps[material.diffuse_map_ID];
-                        if(diffuse_map.has_transparency)
-                        {
-                              skinned_transparent_draw_list.push_back(instance_ID);
-                        }
-                        else
-                        {
-                              skinned_opaque_draw_list.push_back(instance_ID);
-                        }
+                        it.first->second.push_back(instance_index);
                   }
+                  
+                  skinned_mesh_instance_draw_list.push_back(instance_index);
+                  
+                  // for(int skinned_mesh_draw_index = 0; skinned_mesh_draw_index < skinned_mesh.draw_commands.size(); skinned_mesh_draw_index++)
+                  // {
+                  //       const Material& material = m_scene->materials[skinned_mesh.material_IDs[skinned_mesh_draw_index]];
+                  //       const DiffuseMap& diffuse_map = m_scene->diffuse_maps[material.diffuse_map_ID];
+                  //       if(diffuse_map.has_transparency)
+                  //       {
+                  //             skinned_transparent_draw_list.push_back(instance_index);
+                  //       }
+                  //       else
+                  //       {
+                  //             skinned_opaque_draw_list.push_back(instance_index);
+                  //       }
+                  // }
             }
       }
       glm::vec3 main_cam_pos = m_scene->cameras[m_scene->main_camera_ID].translation;
@@ -524,68 +536,73 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
 
             glBindVertexArray(0);
       }
+
       
-
-      //draw skinned mesh
-      DefromAllMeshesWithSkeleton();
-      glUseProgram(*m_skinning);
-      glUniformMatrix4fv(SCENE_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
-      glUniformMatrix4fv(SCENE_PROJECTON_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
-      glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
-      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, bone_transform_SSBO);
-      for(int i = 0; i < skinned_mesh_instance_draw_list.size(); i++)
+      //draw skinned meshes
+      for(const auto& [skeleton_ID, skinned_mesh_indices] : skeleton_instance_map)
       {
-            uint32_t instance_ID = skinned_mesh_instance_draw_list[i];
-            const Instance* instance = &m_scene->instances[instance_ID];
-            const SkinnedMesh* skinned_mesh = &m_scene->skinned_meshes[instance->skinned_mesh_ID];
-            const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh->skeleton_ID];
-            const AnimationGraph* anim_graph = &m_scene->animation_graphs[skinned_mesh->anim_graph_ID];
-            
-            Transform* transform = &m_scene->transforms[instance->transform_ID];
-            transform->scale = glm::vec3(1.0f);
+            const Skeleton* skeleton = &m_scene->skeletons[skeleton_ID];
+            DefromAllMeshesWithSkeleton(skeleton, skinned_mesh_indices.size());
 
-            glm::mat4 MW = glm::mat4(1.0f);
-            MW = translate(-transform->rotation_origin) * MW;
-            MW = mat4_cast(transform->rotation) * MW;
-            MW = translate(transform->rotation_origin) * MW;
-            MW = scale(transform->scale) * MW;
-            MW = translate(transform->translation) * MW;
+            glUseProgram(*m_skinning);
+            glUniformMatrix4fv(SCENE_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
+            glUniformMatrix4fv(SCENE_PROJECTON_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
+            glActiveTexture(GL_TEXTURE0 + SCENE_DIFFUSE_MAP_TEXTURE_BINDING);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, bone_transform_SSBO);
 
-            glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
-            glUniform1i(SCENE_BONE_OFFSET_UNIFORM_LOCATION, skeleton->bone_count * i);
-            
-            glBindVertexArray(skinned_mesh->mesh_VAO);
-            for(size_t mesh_draw_index = 0; mesh_draw_index < skinned_mesh->draw_commands.size(); mesh_draw_index++)
+            for(int i = 0; i < skinned_mesh_indices.size(); i++)
             {
-                  const DrawCommand* draw_cmd = &skinned_mesh->draw_commands[mesh_draw_index];
-                  const Material* material = &m_scene->materials[skinned_mesh->material_IDs[mesh_draw_index]];
+                  uint32_t instance_index = skinned_mesh_indices[i];
+                  const Instance* instance = &m_scene->instances[instance_index];
+                  const SkinnedMesh* skinned_mesh = &m_scene->skinned_meshes[instance->skinned_mesh_ID];
+                  const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh->skeleton_ID];
 
+                  Transform* transform = &m_scene->transforms[instance->transform_ID];
+                  transform->scale = glm::vec3(1.0f);
 
-                  glUniform2fv(SCENE_TEXCOORD_SCALE, 1, value_ptr(material->scale));
-                  glUniform2fv(SCENE_TEXCOORD_OFFSET, 1, value_ptr(material->offset));
+                  glm::mat4 MW = glm::mat4(1.0f);
+                  MW = translate(-transform->rotation_origin) * MW;
+                  MW = mat4_cast(transform->rotation) * MW;
+                  MW = translate(transform->rotation_origin) * MW;
+                  MW = scale(transform->scale) * MW;
+                  MW = translate(transform->translation) * MW;
 
-                  
-                  if(material->diffuse_map_ID == -1)
+                  glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
+                  glUniform1i(SCENE_BONE_OFFSET_UNIFORM_LOCATION, skeleton->bone_count * i);
+
+                  glBindVertexArray(skinned_mesh->mesh_VAO);
+                  for(size_t mesh_draw_index = 0; mesh_draw_index < skinned_mesh->draw_commands.size(); mesh_draw_index++)
                   {
-                        glBindTexture(GL_TEXTURE_2D, 0);
-                        glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 0);
-                  }
-                  else
-                  {
-                        const DiffuseMap* diffuse_map = &m_scene->diffuse_maps[material->diffuse_map_ID];
-                        glBindTexture(GL_TEXTURE_2D, diffuse_map->DiffuseMapTO);
-                        glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 1);
+                        const DrawCommand* draw_cmd = &skinned_mesh->draw_commands[mesh_draw_index];
+                        const Material* material = &m_scene->materials[skinned_mesh->material_IDs[mesh_draw_index]];
+
+
+                        glUniform2fv(SCENE_TEXCOORD_SCALE, 1, value_ptr(material->scale));
+                        glUniform2fv(SCENE_TEXCOORD_OFFSET, 1, value_ptr(material->offset));
+
+
+                        if(material->diffuse_map_ID == -1)
+                        {
+                              glBindTexture(GL_TEXTURE_2D, 0);
+                              glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 0);
+                        }
+                        else
+                        {
+                              const DiffuseMap* diffuse_map = &m_scene->diffuse_maps[material->diffuse_map_ID];
+                              glBindTexture(GL_TEXTURE_2D, diffuse_map->DiffuseMapTO);
+                              glUniform1i(SCENE_HAS_DIFFUSE_MAP_UNIFORM_LOCATION, 1);
+                        }
+
+                        glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES,
+                                                                      draw_cmd->count,
+                                                                      GL_UNSIGNED_INT,
+                                                                      (GLvoid*)(sizeof(uint32_t) * draw_cmd->firstIndex),
+                                                                      draw_cmd->primCount,
+                                                                      draw_cmd->baseVertex,
+                                                                      draw_cmd->baseInstance);
                   }
 
-                  glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES,
-                                                                draw_cmd->count,
-                                                                GL_UNSIGNED_INT,
-                                                                (GLvoid*)(sizeof(uint32_t) * draw_cmd->firstIndex),
-                                                                draw_cmd->primCount,
-                                                                draw_cmd->baseVertex,
-                                                                draw_cmd->baseInstance);
             }
-
       }
       glUseProgram(0);
       glBindVertexArray(0);
@@ -683,13 +700,13 @@ void PRenderer::DrawTransparent(const glm::mat4& projection,
 
 }
 
-void PRenderer::DefromAllMeshesWithSkeleton()
+void PRenderer::DefromAllMeshesWithSkeleton(const Skeleton* skeleton, int instances)
 {
 
       glUseProgram(*m_skin_compute);
       
       all_poses.clear();
-      for(int i = 0; i < skinned_mesh_instance_draw_list.size(); i++)
+      for(int i = 0; i < instances; i++)
       {
             uint32_t instance_ID = skinned_mesh_instance_draw_list[i];
             const Instance* instance = &m_scene->instances[instance_ID];
@@ -697,9 +714,7 @@ void PRenderer::DefromAllMeshesWithSkeleton()
             all_poses.insert(all_poses.end(), anim_graph->out_pose.begin(), anim_graph->out_pose.end());
       }
 
-
-      unsigned int bone_count = 92;
-      int instances = skinned_opaque_draw_list.size();
+      unsigned int bone_count = skeleton->bone_count;
       glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_INV_BIND_POSE_BINDING, inv_bind_pose_SSBO);
       glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, bone_transform_SSBO);
       

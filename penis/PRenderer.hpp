@@ -4,6 +4,7 @@
 #include "scene.hpp"
 #include "preamble.glsl"
 #include "glm/glm.hpp"
+#include <unordered_map>
 
 
 class PRenderer : public IRenderer
@@ -77,6 +78,10 @@ public:
       std::vector<uint32_t> skinned_opaque_draw_list{};
       std::vector<uint32_t> skinned_mesh_instance_draw_list{};
       std::vector<uint32_t> skinned_transparent_draw_list{};
+
+      std::unordered_map<uint32_t, std::vector<uint32_t>> skeleton_instance_map;
+
+      
       void CreateDrawList();
       void DrawShadowMap(const glm::mat4& light_space_matrix);
       void DrawSkybox(const glm::mat4& projection, const glm::mat4& view);
@@ -95,7 +100,7 @@ public:
 
       void DeformMeshGPU(const Skeleton* skeleton, std::span<const TRS> poses, GLuint* skinning_compute_shader);
 
-      void DefromAllMeshesWithSkeleton();
+      void DefromAllMeshesWithSkeleton(const Skeleton* skeleton, int instances);
       
       void BlitFrameBuffer(GLuint& read_buffer, GLuint draw_buffer, int width, int height);
 
