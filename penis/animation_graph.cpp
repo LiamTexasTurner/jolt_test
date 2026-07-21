@@ -56,28 +56,16 @@ void TickPose(const Animation& in_animation, span<TRS> out_pose, float frame)
 
 void TickAnimGraph(Arena& arena, AnimationGraph& graph, float dt, int anim_index)
 {
-      // ArenaArray<TRS> pose_1 = CreateArenaArray<TRS>(arena, graph.bone_count);
-      // memset(pose_1.items, 0, pose_1.capacity * sizeof(*pose_1.items));
-
-      // ArenaArray<TRS> pose_2 = CreateArenaArray<TRS>(arena, graph.bone_count);
-      // memset(pose_2.items, 0, pose_2.capacity * sizeof(*pose_2.items));
-
-      // ArenaArray<TRS> out_pose_ls = CreateArenaArray<TRS>(arena, graph.bone_count);
-      // memset(out_pose_ls.items, 0, out_pose_ls.capacity * sizeof(*out_pose_ls.items));
-
-      
 
       AnimationClip& clip = graph.clips[anim_index];
       TickClipTime(clip, dt, true);
 
       TickPose((*graph.animations)[clip.ID], graph.out_pose, clip.current_time);
 
-      
+      graph.out_pose[0].translation = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+      graph.out_pose[1].translation = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);      
 
-      FK(graph.bone_info, graph.out_pose);
-
-
-            
+      FK(graph.bone_info, graph.out_pose);            
 }
 void TickAnimGraphSerial( AnimationGraph& graph, float dt)
 {

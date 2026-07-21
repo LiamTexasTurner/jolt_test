@@ -10,6 +10,7 @@
 
 
 
+
 struct AnimationClip
 {
       uint32_t ID = 0;
@@ -48,6 +49,7 @@ struct AnimationGraph
             }
 
             out_pose.resize(bone_count);
+            
       }
 
       packed_freelist<Animation>* animations;

@@ -75,6 +75,7 @@ public:
       std::vector<uint32_t> opaque_draw_list{};
       std::vector<uint32_t> transparent_draw_list{};
       std::vector<uint32_t> skinned_opaque_draw_list{};
+      std::vector<uint32_t> skinned_mesh_instance_draw_list{};
       std::vector<uint32_t> skinned_transparent_draw_list{};
       void CreateDrawList();
       void DrawShadowMap(const glm::mat4& light_space_matrix);

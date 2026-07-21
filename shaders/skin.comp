@@ -71,11 +71,11 @@ void main()
   uint index = gl_GlobalInvocationID.x;
   uint bone_offset = gl_GlobalInvocationID.y * bone_count;
   
-  if(index >= bone_mats.length())
+  if(index >= bone_count)
     {
       return;
     }
 
   mat4 animation_mat = getTranslationMatrix(bone_offset + index) * getRotationMatrix(bone_offset + index) * getScaleMatrix(bone_offset + index);
-  bone_mats[bone_offset + index] = animation_mat * inv_bone_mat[bone_offset + index];
+  bone_mats[bone_offset + index] = animation_mat * inv_bone_mat[index];
 }

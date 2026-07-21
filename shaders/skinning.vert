@@ -21,8 +21,7 @@ layout(location = SCENE_PROJECTON_UNIFORM_LOCATION)
 uniform mat4 projection;
 
 layout(location = SCENE_BONE_OFFSET_UNIFORM_LOCATION)
-uniform uint bone_offset;
-
+uniform int bone_offset;
 
 
 layout(std430, binding = SCENE_BONE_MAT_SSBO_BINDING) readonly buffer bone_buffer
