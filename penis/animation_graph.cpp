@@ -62,16 +62,10 @@ void TickAnimGraph(Arena& arena, AnimationGraph& graph, float dt, int anim_index
 
       TickPose((*graph.animations)[clip.ID], graph.out_pose, clip.current_time);
 
-      graph.out_pose[0].translation = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-      graph.out_pose[1].translation = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);      
-
       FK(graph.bone_info, graph.out_pose);            
 }
 void TickAnimGraphSerial( AnimationGraph& graph, float dt)
 {
-      
-
-
       AnimationClip& clip = graph.clips[16];
       TickClipTime(clip, dt, true);
 

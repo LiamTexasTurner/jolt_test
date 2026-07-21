@@ -41,7 +41,6 @@ struct AnimationGraph
             for(uint32_t ID : in_anim_IDs)
             {
                   Animation& anim = (*animations)[ID];
-                  std::cout << anim.name << std::endl;
                   anim_map.emplace(anim.name, ID);
                   clips[i].frame_count = anim.frame_count;
                   clips[i].ID = i;
