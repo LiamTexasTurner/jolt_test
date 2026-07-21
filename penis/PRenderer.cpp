@@ -330,11 +330,10 @@ void PRenderer::CreateDrawList()
                   
                   const SkinnedMesh& skinned_mesh = m_scene->skinned_meshes[instance.skinned_mesh_ID];
                   const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh.skeleton_ID];
+                  
                   auto it = skeleton_instance_map.try_emplace(skinned_mesh.skeleton_ID, instance_index);
-                  if(!it.second)
-                  {
-                        it.first->second.push_back(instance_index);
-                  }                  
+                  it.first->second.push_back(instance_index);
+                  
             }
       }
       glm::vec3 main_cam_pos = m_scene->cameras[m_scene->main_camera_ID].translation;

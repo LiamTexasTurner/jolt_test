@@ -70,8 +70,13 @@ public:
                                              chips_skeleton.bone_info);                
 
                   uint32_t chips_ID = LoadSkeletalMesh(*m_scene, chips_mesh);
+
+
+
+                  
+                  
                   //Instances
-                  for(int i = 0; i < 22; i++)
+                  for(int i = 0; i < 10; i++)
                   {
                         uint32_t new_instance_ID = 0;
 
