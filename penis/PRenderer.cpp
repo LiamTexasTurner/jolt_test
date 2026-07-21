@@ -548,14 +548,16 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
             Transform* transform = &m_scene->transforms[instance->transform_ID];
             transform->scale = glm::vec3(1.0f);
 
-            glm::mat4 MW = glm::mat4(1.0f);
-            MW = translate(-transform->rotation_origin) * MW;
-            MW = mat4_cast(transform->rotation) * MW;
-            MW = translate(transform->rotation_origin) * MW;
-            MW = scale(transform->scale) * MW;
-            MW = translate(transform->translation) * MW;
-
-            // glm::mat4 MW = glm::translate(glm::mat4(1.0f), glm::vec3(i, 0.0f, 0.0f));
+            // glm::mat4 MW = glm::mat4(1.0f);
+            // MW = translate(-transform->rotation_origin) * MW;
+            // MW = mat4_cast(transform->rotation) * MW;
+            // MW = translate(transform->rotation_origin) * MW;
+            // MW = scale(transform->scale) * MW;
+            // MW = translate(transform->translation) * MW;
+      
+            glm::mat4 MW = glm::translate(glm::mat4(1.0f), glm::vec3(i, 0.0f, 0.0f)) *
+                           glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            
 
             
 
