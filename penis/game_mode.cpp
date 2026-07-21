@@ -69,7 +69,7 @@ public:
                                              chips_animations,
                                              chips_skeleton.bone_info);                
 
-                  uint32_t chips_ID = LoadSkeletalMesh(*m_scene, chips_mesh, std::move(chips_graph));
+                  uint32_t chips_ID = LoadSkeletalMesh(*m_scene, chips_mesh);
                   //Instances
                   for(int i = 0; i < 10; i++)
                   {
@@ -81,7 +81,7 @@ public:
                         }
                         else
                         {
-                              AddSkinnedMeshInstance(*scene, chips_ID, &new_instance_ID);
+                              AddSkinnedMeshInstance(*scene, chips_ID, &new_instance_ID, chips_graph);
                         }
                               
                         uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
@@ -92,30 +92,31 @@ public:
             };
 
             //pilot
-            {
-                  MeshData mesh;
-                  std::ifstream is("../resources/pilot/bin/pilot.pbin", ios::binary);
-                  cereal::BinaryInputArchive i_archive(is);
-                  i_archive(mesh);
-                  uint32_t mesh_ID = LoadMesh(*m_scene, mesh);
-                  {
-                        uint32_t new_instance_ID = 0;
+            // {
+            //       MeshData mesh;
+            //       std::ifstream is("../resources/pilot/bin/pilot.pbin", ios::binary);
+            //       cereal::BinaryInputArchive i_archive(is);
+            //       i_archive(mesh);
+            //       uint32_t mesh_ID = LoadMesh(*m_scene, mesh);
+            //       {
+            //             uint32_t new_instance_ID = 0;
 
-                        if(!mesh.skinned)
-                        {
-                              AddMeshInstance(*scene, mesh_ID, &new_instance_ID);
-                        }
-                        else
-                        {
-                              AddSkinnedMeshInstance(*scene, mesh_ID, &new_instance_ID);
-                        }
+            //             if(!mesh.skinned)
+            //             {
+            //                   AddMeshInstance(*scene, mesh_ID, &new_instance_ID);
+            //             }
+            //             else
+            //             {
+            //                   AddSkinnedMeshInstance(*scene, mesh_ID, &new_instance_ID, std::move(chips_graph));
+            //             }
                               
-                        uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-                        scene->transforms[new_instance_ID].translation = glm::vec3(0,1,0);
-                        scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
-                        entities.emplace_back(Entity(new_instance_ID));
-                  }                 
-            };
+            //             uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
+            //             scene->transforms[new_instance_ID].translation = glm::vec3(0,1,0);
+            //             scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
+            //             entities.emplace_back(Entity(new_instance_ID));
+            //       }                 
+            // }
+            //;
 
             
                   
@@ -173,7 +174,7 @@ public:
                                 (JobDispatchArgs args, Arena& arena)
             {
                   AnimationGraph& graph = m_scene->animation_graphs[args.jobIndex];
-                  TickAnimGraph(arena, graph, dt);
+                  TickAnimGraph(arena, graph, dt, args.jobIndex);
             });
 
             JobSystem::Wait();

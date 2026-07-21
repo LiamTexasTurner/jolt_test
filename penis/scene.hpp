@@ -39,6 +39,7 @@ struct Instance
       uint32_t transform_ID = 0;
       uint32_t mesh_ID = 0;
       uint32_t skinned_mesh_ID = 0;
+      uint32_t anim_graph_ID = 0;
 };
 
 struct Opaque
@@ -86,7 +87,7 @@ struct material_file_info
 
 uint32_t LoadMesh(Scene& scene, MeshData& mesh_data);
 
-uint32_t LoadSkeletalMesh(Scene& scene, MeshData& mesh_data, AnimationGraph anim_graph);
+uint32_t LoadSkeletalMesh(Scene& scene, MeshData& mesh_data);
 
 uint32_t LoadSkeleton(Scene& scene, SkeletonData& skeleton_data);
 
@@ -98,7 +99,7 @@ void AddSkybox(Scene& scene, uint32_t* new_skybox_ID);
 
 void AddMeshInstance(Scene& scene, uint32_t mesh_ID, uint32_t* new_instance_ID);
 
-void AddSkinnedMeshInstance(Scene &scene, uint32_t skinned_mesh_ID, uint32_t *new_instance_ID);
+void AddSkinnedMeshInstance(Scene &scene, uint32_t skinned_mesh_ID, uint32_t *new_instance_ID, AnimationGraph anim_graph);
 
 void RemoveInstance(Scene& scene, uint32_t instance_ID);
 

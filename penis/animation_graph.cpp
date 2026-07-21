@@ -54,7 +54,7 @@ void TickPose(const Animation& in_animation, span<TRS> out_pose, float frame)
       }
 }
 
-void TickAnimGraph(Arena& arena, AnimationGraph& graph, float dt)
+void TickAnimGraph(Arena& arena, AnimationGraph& graph, float dt, int anim_index)
 {
       // ArenaArray<TRS> pose_1 = CreateArenaArray<TRS>(arena, graph.bone_count);
       // memset(pose_1.items, 0, pose_1.capacity * sizeof(*pose_1.items));
@@ -67,7 +67,7 @@ void TickAnimGraph(Arena& arena, AnimationGraph& graph, float dt)
 
       
 
-      AnimationClip& clip = graph.clips[10];
+      AnimationClip& clip = graph.clips[anim_index];
       TickClipTime(clip, dt, true);
 
       TickPose((*graph.animations)[clip.ID], graph.out_pose, clip.current_time);

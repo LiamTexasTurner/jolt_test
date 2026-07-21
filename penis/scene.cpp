@@ -399,15 +399,13 @@ uint32_t LoadMesh(Scene& scene, MeshData& mesh_data)
             return new_mesh_ID;
       }
 }
-uint32_t LoadSkeletalMesh(Scene& scene, MeshData& mesh_data, AnimationGraph anim_graph)
+uint32_t LoadSkeletalMesh(Scene& scene, MeshData& mesh_data)
 {
       SkinnedMesh mesh_result;
       mesh_result.vertex_count = mesh_data.vertex_count;
       mesh_result.index_count = mesh_data.index_count;
       mesh_result.draw_commands = mesh_data.draw_commands;
       mesh_result.material_IDs = mesh_data.material_IDs;
-
-      mesh_result.anim_graph_ID = scene.animation_graphs.insert(std::move(anim_graph));
       
       for(DrawCommand& cmd : mesh_data.draw_commands)
       {
@@ -609,17 +607,20 @@ void AddMeshInstance(Scene &scene, uint32_t mesh_ID, uint32_t *new_instance_ID)
             *new_instance_ID = tmp_new_instance_ID;
       }      
 };
-void AddSkinnedMeshInstance(Scene &scene, uint32_t skinned_mesh_ID, uint32_t *new_instance_ID)
+void AddSkinnedMeshInstance(Scene &scene, uint32_t skinned_mesh_ID, uint32_t *new_instance_ID, AnimationGraph anim_graph)
 {
       Transform new_transform;
       new_transform.scale = glm::vec3(1.0f);
 
       uint32_t new_transform_ID = scene.transforms.insert(new_transform);
 
+      
+
       Instance new_instance;
       new_instance.skinned_mesh_ID = skinned_mesh_ID;
       new_instance.transform_ID = new_transform_ID;
-
+      new_instance.anim_graph_ID = scene.animation_graphs.insert(anim_graph);
+      
       uint32_t tmp_new_instance_ID = scene.instances.insert(new_instance);
       if(new_instance_ID)
       {
