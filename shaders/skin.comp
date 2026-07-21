@@ -7,6 +7,9 @@ struct TRS
   vec4 scale;
 };
 
+layout(location = SKINNING_COMP_BONE_COUNT_UNIFORM_LOCATION)
+uniform uint bone_count;
+
 layout(std430, binding = SKINNING_COMPUTE_TRS_BINDING) readonly buffer TRSData
 {
   TRS trs_data[];
@@ -66,11 +69,13 @@ mat4 getRotationMatrix(uint index) {
 void main()
 {
   uint index = gl_GlobalInvocationID.x;
+  uint bone_offset = gl_GlobalInvocationID.y * bone_count;
+  
   if(index >= bone_mats.length())
     {
       return;
     }
 
-  mat4 animation_mat = getTranslationMatrix(index) * getRotationMatrix(index) * getScaleMatrix(index);
-  bone_mats[index] = animation_mat * inv_bone_mat[index];
+  mat4 animation_mat = getTranslationMatrix(bone_offset + index) * getRotationMatrix(bone_offset + index) * getScaleMatrix(bone_offset + index);
+  bone_mats[bone_offset + index] = animation_mat * inv_bone_mat[bone_offset + index];
 }

@@ -5,6 +5,7 @@
 #include "scene.hpp"
 #include <algorithm>
 #include <span>
+#include <random>
 
 using namespace std;
 
@@ -64,10 +65,14 @@ void TickAnimGraph(Arena& arena, AnimationGraph& graph, float dt)
       // ArenaArray<TRS> out_pose_ls = CreateArenaArray<TRS>(arena, graph.bone_count);
       // memset(out_pose_ls.items, 0, out_pose_ls.capacity * sizeof(*out_pose_ls.items));
 
-      AnimationClip& clip = graph.clips[16];
+      
+
+      AnimationClip& clip = graph.clips[10];
       TickClipTime(clip, dt, true);
 
       TickPose((*graph.animations)[clip.ID], graph.out_pose, clip.current_time);
+
+      
 
       FK(graph.bone_info, graph.out_pose);
 

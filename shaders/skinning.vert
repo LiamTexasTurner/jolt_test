@@ -20,6 +20,11 @@ uniform mat4 view;
 layout(location = SCENE_PROJECTON_UNIFORM_LOCATION)
 uniform mat4 projection;
 
+layout(location = SCENE_BONE_OFFSET_UNIFORM_LOCATION)
+uniform uint bone_offset;
+
+
+
 layout(std430, binding = SCENE_BONE_MAT_SSBO_BINDING) readonly buffer bone_buffer
 {
   mat4 bone_mats[];
@@ -34,10 +39,10 @@ void main()
 
     
     vec4 skinnedPosition =
-      bone_weights.x*(bone_mats[bone_ID.x]*Position) +
-      bone_weights.y*(bone_mats[bone_ID.y]*Position) +
-      bone_weights.z*(bone_mats[bone_ID.z]*Position) +
-      bone_weights.w*(bone_mats[bone_ID.w]*Position);
+      bone_weights.x*(bone_mats[bone_offset + bone_ID.x]*Position) +
+      bone_weights.y*(bone_mats[bone_offset + bone_ID.y]*Position) +
+      bone_weights.z*(bone_mats[bone_offset + bone_ID.z]*Position) +
+      bone_weights.w*(bone_mats[bone_offset + bone_ID.w]*Position);
   
     
   gl_Position = projection * view * MW * skinnedPosition;

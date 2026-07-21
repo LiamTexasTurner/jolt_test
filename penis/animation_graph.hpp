@@ -60,6 +60,7 @@ struct AnimationGraph
       uint32_t skeleton_ID;
       
       int bone_count;
+      int anim_index = 0;
 };
 void TickAnimGraph(Arena& arena, AnimationGraph& graph, float dt);
 void TickAnimGraphSerial( AnimationGraph& graph, float dt);
