@@ -1,5 +1,6 @@
 #include "game_mode.hpp"
 #include "scene.hpp"
+#include "penis_jolt.hpp"
 #include "renderer.hpp"
 #include "entity.hpp"
 #include "GLFW/glfw3.h"
@@ -18,6 +19,7 @@ public:
 
       std::vector<Entity> entities;      
       Scene* m_scene;
+      pJolt* m_jolt;
       IRenderer* m_renderer;
       GLFWwindow* m_window;
 
@@ -28,9 +30,11 @@ public:
 
       unsigned int m_last_update_tick;
 
-      void Init(Scene* scene, GLFWwindow* window, IRenderer* renderer) override
+      void Init(Scene* scene, pJolt* p_jolt, GLFWwindow* window, IRenderer* renderer) override
       {
             m_scene = scene;
+      
+            m_jolt = p_jolt;
 
             m_renderer = renderer;
 
@@ -90,7 +94,7 @@ public:
                         }
                               
                         uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-                        scene->transforms[new_instance_ID].translation = glm::vec3(i + 1,1,0);
+                        scene->transforms[new_instance_ID].translation = glm::vec3(i + 1,0,0);
                         scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
                         entities.emplace_back(Entity(new_instance_ID));
                   }
@@ -185,6 +189,12 @@ public:
             P_JobSystem::Wait();
       
 
+            
+      }
+
+      void PhysicsUpdate(float dt) override
+      {
+            m_jolt->mPhysicsSystem->Update(dt, m_jolt->mCollisionSteps, m_jolt->mTempAllocator, m_jolt->mJobSystem);
             
       }
 };

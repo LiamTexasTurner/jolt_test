@@ -163,14 +163,11 @@ int main()
       renderer->Resize(SCR_WIDTH, SCR_HEIGHT);
 
       IGameMode* game_mode = NewGameMode();
-      game_mode->Init(&scene, window, renderer);
+      game_mode->Init(&scene, &p_jolt, window, renderer);
 
       p_jolt.CreateSphere(glm::vec3(1.0f, 5.0f, 0.0f), 20.0f);
-
       p_jolt.CreateSphere(glm::vec3(-1.0f, 5.0f, 0.0f), 20.0f);
-
       p_jolt.CreateBox(glm::vec3(0.0f), glm::vec3(10.0f, 1.0f, 10.0f));
-     
 
       last_time = glfwGetTime();
       accumulator = 0.0;
@@ -192,9 +189,12 @@ int main()
             while (accumulator >= fixed_dt)
             {
                   accumulator -= fixed_dt;
-                  p_jolt.mPhysicsSystem->Update(fixed_dt, p_jolt.mCollisionSteps, p_jolt.mTempAllocator, p_jolt.mJobSystem);
+                  game_mode->PhysicsUpdate(fixed_dt);
                   p_jolt.mDebugRender->lines.clear();
-                  p_jolt.mPhysicsSystem->DrawBodies(p_jolt.mBodyDrawSettings, p_jolt.mDebugRender);                  
+                  P_JobSystem::Execute([&](Arena& arena)
+                  {
+                        p_jolt.mPhysicsSystem->DrawBodies(p_jolt.mBodyDrawSettings, p_jolt.mDebugRender);                  
+                  });
             }           
 
             game_mode->Update(delta_time);
@@ -232,7 +232,8 @@ int main()
                   PREV_SCR_HEIGHT = SCR_HEIGHT;
             }
       
-            
+
+            P_JobSystem::Wait();
             unsigned int render_texture = renderer->Paint();
             
 
