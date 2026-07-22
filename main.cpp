@@ -59,7 +59,6 @@ int main()
       _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_DEBUG);
 #endif
       pJobSystem::Initialize();
-      pJolt p_jolt;
 
       glfwInit();
       glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -153,12 +152,14 @@ int main()
       // Setup Platform/Renderer backends
       ImGui_ImplGlfw_InitForOpenGL(window, true);
       ImGui_ImplOpenGL3_Init();
+
+      pJolt p_jolt;
       
       Scene scene;
       scene.Init();
 
       IRenderer* renderer = NewRenderer();
-      renderer->Init(&scene, p_jolt.mDebugRender);
+      renderer->Init(&scene);
 
       renderer->Resize(SCR_WIDTH, SCR_HEIGHT);
 
@@ -166,9 +167,9 @@ int main()
       game_mode->Init(&scene, &p_jolt, window, renderer);
 
       p_jolt.CreateSphere(glm::vec3(1.0f, 5.0f, 0.0f), 20.0f);
-      p_jolt.CreateSphere(glm::vec3(-1.0f, 5.0f, 0.0f), 20.0f);
-      p_jolt.CreateBox(glm::vec3(0.0f), glm::vec3(10.0f, 1.0f, 10.0f));
-      p_jolt.AddRagdoll();
+      // p_jolt.CreateSphere(glm::vec3(-1.0f, 5.0f, 0.0f), 20.0f);
+      // p_jolt.CreateBox(glm::vec3(0.0f), glm::vec3(10.0f, 1.0f, 10.0f));
+      // p_jolt.AddRagdoll();
 
       last_time = glfwGetTime();
       accumulator = 0.0;
@@ -191,12 +192,11 @@ int main()
             {
                   accumulator -= fixed_dt;
                   game_mode->PhysicsUpdate(fixed_dt);
-                  p_jolt.mDebugRender->lines.clear();
-                  pJobSystem::Execute([&](Arena& arena)
-                  {
-                        p_jolt.mPhysicsSystem->DrawBodies(p_jolt.mBodyDrawSettings, p_jolt.mDebugRender);                  
-                  });
-            }           
+                  
+                        
+            }
+
+            p_jolt.mPhysicsSystem->DrawBodies(p_jolt.mBodyDrawSettings, p_jolt.mDebugRenderer);
 
             game_mode->Update(delta_time);
 
@@ -234,7 +234,7 @@ int main()
             }
       
 
-            pJobSystem::Wait();
+
             unsigned int render_texture = renderer->Paint();
             
 

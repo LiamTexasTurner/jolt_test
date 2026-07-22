@@ -16,7 +16,6 @@ public:
       PRenderer() = default;
 
       Scene* m_scene;
-      pDebugRender* m_debug_renderer;
 
       ShaderSet m_shaders;
       GLuint* m_scene_SP;
@@ -71,7 +70,7 @@ public:
       bool draw_skinned = false;
       void toggle_skinned(){draw_skinned = ! draw_skinned;}
       
-      void Init(Scene* scene, pDebugRender* debug_renderer) override;
+      void Init(Scene* scene) override;
       void UpdateBuffers(Scene* scene) override;
       void Resize(int width, int height) override;
       unsigned int Paint() override;

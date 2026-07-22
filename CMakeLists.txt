@@ -33,7 +33,7 @@ add_executable(SceneRenderer
   penis/arena.cpp
   penis/animation_graph.cpp
   penis/penis_jolt.cpp
-
+  penis_jolt/debug_renderer.cpp
 
   c:/imgui/imgui.cpp
   c:/imgui/imgui_demo.cpp

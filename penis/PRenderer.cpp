@@ -20,10 +20,10 @@
 
 using namespace std;
 
-void PRenderer::Init(Scene* scene, pDebugRender* debug_renderer) 
+void PRenderer::Init(Scene* scene) 
 {
       m_scene = scene;
-      m_debug_renderer = debug_renderer;
+      
       
 
       m_shaders.SetVersion("440");
@@ -704,27 +704,7 @@ void PRenderer::DrawDebugLines(const glm::mat4& model,
                                const glm::mat4& view,
                                const glm::mat4& projection)
 {
-      glUseProgram(*m_debug_line_SP);
-      glBindFramebuffer(GL_FRAMEBUFFER, back_buffer_single_samp_FBO);
-      glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-      glEnable(GL_DEPTH_TEST);
-      glUniformMatrix4fv(DEBUG_MODEL_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(model));
-      glUniformMatrix4fv(DEBUG_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
-      glUniformMatrix4fv(DEBUG_PROJECTION_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
-
-      glBindVertexArray(m_debug_line_vao);
-      glBindBuffer(GL_ARRAY_BUFFER, m_debug_line_vbo);
-
-      glBufferData(GL_ARRAY_BUFFER,
-                   m_debug_renderer->lines.size() * sizeof(DebugLineVertex),
-                   m_debug_renderer->lines.data(),
-                   GL_DYNAMIC_DRAW);
       
-      glDrawArrays(GL_LINES,
-                   0,
-                   (GLsizei)m_debug_renderer->lines.size());
-
-      ResetRenderState();
 }
 
 void PRenderer::DefromAllMeshesWithSkeleton(const pSkeleton* skeleton, span<const uint32_t> instances)

@@ -5,10 +5,10 @@
 #include <Jolt/Core/TempAllocator.h>
 #include <Jolt/Core/JobSystemThreadPool.h>
 #include <Jolt/Physics/PhysicsSystem.h>
-#include <Jolt/Renderer/DebugRendererSimple.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 #include <Jolt/Physics/Collision/ContactListener.h>
 #include <Jolt/Physics/Ragdoll/Ragdoll.h>
+#include "../penis_jolt/debug_renderer.hpp"
 
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -54,71 +54,6 @@ inline RMat44 glm_to_j_mat4(glm::mat4 m)
             JPH::Vec4(m[3][0], m[3][1], m[3][2], m[3][3])
       );
 }
-
-
-
-class pDebugRender : public JPH::DebugRendererSimple
-{
-public:
-      pDebugRender()
-      {
-            Initialize();
-            lines.reserve(10000000);
-      }
-
-      
-
-      std::vector<DebugLineVertex> lines;
-
-      void Clear()
-      {
-            lines.clear();
-      }
-
-      void DrawLine(RVec3Arg inFrom, RVec3Arg inTo, ColorArg inColor) override
-      {
-            lines.push_back({
-                  float(inFrom.GetX()),
-                  float(inFrom.GetY()),
-                  float(inFrom.GetZ()),
-                  (float)inColor.r,
-                  (float)inColor.g,
-                  (float)inColor.b
-
-            });
-
-            lines.push_back({
-                  float(inTo.GetX()),
-                  float(inTo.GetY()),
-                  float(inTo.GetZ()),
-                  (float)inColor.r,
-                  (float)inColor.g,
-                  (float)inColor.b
-            });
-
-
-      }
-
-      void DrawTriangle(
-            RVec3Arg inV1,
-            RVec3Arg inV2,
-            RVec3Arg inV3,
-            ColorArg inColor,
-            ECastShadow inCastShadow = ECastShadow::Off) override
-      {
-            DrawLine(inV1, inV2, inColor);
-            DrawLine(inV2, inV3, inColor);
-            DrawLine(inV3, inV1, inColor);
-      }
-
-      void DrawText3D(
-            RVec3Arg inPosition,
-            const string_view &inString,
-            ColorArg inColor = Color::sWhite,
-            float inHeight = 0.5f) override
-      {
-      }
-};
 
 
 static void TraceImpl(const char *inFMT, ...)
@@ -341,7 +276,7 @@ public:
 	ObjectVsBroadPhaseLayerFilterImpl   mObjectVsBroadPhaseLayerFilter;					
 	ObjectLayerPairFilterImpl           mObjectVsObjectLayerFilter;								
 
-      pDebugRender*                       mDebugRender = nullptr;
+      pDebugRenderer*                     mDebugRenderer = nullptr;
 	TempAllocator *                   	mTempAllocator = nullptr;									
 	JobSystem *                       	mJobSystem = nullptr;										
 	JobSystem *                       	mJobSystemValidating = nullptr;								

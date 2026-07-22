@@ -46,7 +46,7 @@ pJolt::pJolt()
 	mContactListener = new ContactListenerImpl;
       mBodyActivationListener = new BodyActivationListenerImpl;
       
-      mDebugRender = new pDebugRender;
+      mDebugRenderer = new pDebugRenderer;
 
       mBodyDrawSettings.mDrawShape = true;
       mBodyDrawSettings.mDrawShapeWireframe = true;
