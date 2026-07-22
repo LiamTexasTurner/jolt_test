@@ -15,6 +15,7 @@
 #include <span>
 #include <chrono>
 #include <cstdint>
+#include "common.hpp"
 
 using namespace std;
 
@@ -36,10 +37,33 @@ void PRenderer::Init(Scene* scene)
       m_PP_clear = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_clear.frag"});
       m_skinning = m_shaders.AddProgramFromExts({"../shaders/skinning.vert","../shaders/skinning.frag"});
       m_skin_compute = m_shaders.AddProgramFromExts({"../shaders/skin.comp"});
+      m_debug_line_SP = m_shaders.AddProgramFromExts({"../shaders/debug_line.vert", "../shaders/debug_line.frag"});
 
       glGenVertexArrays(1, &m_null_vao);
       glBindVertexArray(m_null_vao);
       glBindVertexArray(0);
+
+      glGenVertexArrays(1, &m_debug_line_vao);
+      glGenBuffers(1, &m_debug_line_vbo);
+      glBindVertexArray(m_debug_line_vao);
+      glBindBuffer(GL_ARRAY_BUFFER, m_debug_line_vbo);
+
+      float line_verts[] =
+      {
+            //pos 
+            0.0f, 0.0f, 0.0f,
+            //color
+            1.0f, 0.0f, 0.0f,
+      };
+                  
+      glBufferData(GL_ARRAY_BUFFER, sizeof(line_verts), line_verts, GL_DYNAMIC_DRAW);
+
+      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(DebugLineVertex), (void*)offsetof(DebugLineVertex, x));
+      glEnableVertexAttribArray(0);
+
+      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(DebugLineVertex), (void*)offsetof(DebugLineVertex, r));
+      glEnableVertexAttribArray(1);
+
 
       all_poses.reserve(4096);
 
@@ -265,6 +289,13 @@ unsigned int PRenderer::Paint()
       DrawOpaque(projection, view, light_space_matrix, light_pos, dir_light_col);
       
       DrawTransparent(projection, view, light_space_matrix, light_pos, dir_light_col);
+
+      vector<DebugLineVertex> lines
+      {
+            DebugLineVertex(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f),
+            DebugLineVertex(0.0f, 2.0f, 0.0f, 1.0f, 1.0f, 1.0f)
+      };
+      DrawDebugLines(glm::mat4(1.0f), view, projection, lines);
 
       BlitFrameBuffer(back_buffer_multi_samp_FBO, back_buffer_single_samp_FBO, SCR_WIDTH, SCR_HEIGHT);
       
@@ -670,6 +701,32 @@ void PRenderer::DrawTransparent(const glm::mat4& projection,
       }
       ResetRenderState();
 
+}
+
+void PRenderer::DrawDebugLines(const glm::mat4& model,
+                               const glm::mat4& view,
+                               const glm::mat4& projection,
+                               std::span<DebugLineVertex> lines)
+{
+      glUseProgram(*m_debug_line_SP);
+      glBindFramebuffer(GL_FRAMEBUFFER, back_buffer_multi_samp_FBO);
+      glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+      glEnable(GL_DEPTH_TEST);
+      glUniformMatrix4fv(DEBUG_MODEL_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(model));
+      glUniformMatrix4fv(DEBUG_VIEW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(view));
+      glUniformMatrix4fv(DEBUG_PROJECTION_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(projection));
+
+      glBindVertexArray(m_debug_line_vao);
+      glBindBuffer(GL_ARRAY_BUFFER, m_debug_line_vbo);
+
+      glBufferData(GL_ARRAY_BUFFER,
+                   lines.size() * sizeof(DebugLineVertex),
+                   lines.data(),
+                   GL_DYNAMIC_DRAW);
+      
+      glDrawArrays(GL_LINES,
+                   0,
+                   (GLsizei)lines.size());
 }
 
 void PRenderer::DefromAllMeshesWithSkeleton(const Skeleton* skeleton, span<const uint32_t> instances)

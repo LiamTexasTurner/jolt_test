@@ -28,6 +28,7 @@ public:
       GLuint* m_PP_clear;
       GLuint* m_skinning;
       GLuint* m_skin_compute;
+      GLuint* m_debug_line_SP;
       
       unsigned int SCR_WIDTH;
       unsigned int SCR_HEIGHT;
@@ -60,6 +61,9 @@ public:
 
       GLuint m_null_vao;
 
+      GLuint m_debug_line_vao;
+      GLuint m_debug_line_vbo;
+
       void DrawDebugQuad(){render_shadow_map = !render_shadow_map;}
 
       bool draw_skinned = false;
@@ -82,18 +86,27 @@ public:
 
       
       void CreateDrawList();
+      
       void DrawShadowMap(const glm::mat4& light_space_matrix);
+      
       void DrawSkybox(const glm::mat4& projection, const glm::mat4& view);
+      
       void DrawOpaque(const glm::mat4& projection,
                       const glm::mat4& view,
                       const glm::mat4& light_space_matrix,
                       const glm::vec3& light_pos,
                       const glm::vec3& dir_light_col);
+      
       void DrawTransparent(const glm::mat4& projection,
                            const glm::mat4& view,
                            const glm::mat4& light_space_matrix,
                            const glm::vec3& light_pos,
                            const glm::vec3& dir_light_col);
+      
+      void DrawDebugLines(const glm::mat4& model,
+                          const glm::mat4& view,
+                          const glm::mat4& projection,
+                          std::span<DebugLineVertex> lines);
 
       std::vector<TRS> all_poses;
 

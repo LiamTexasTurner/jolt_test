@@ -46,3 +46,9 @@ struct alignas(16)TRS
                scale);
       };
 };
+
+struct DebugLineVertex
+{
+      float x, y, z;
+      float r, g, b;
+};

@@ -24,6 +24,7 @@
 #include <thread>
 #include <vector>
 #include <string_view>
+#include "common.hpp"
 
 JPH_SUPPRESS_WARNINGS
 using namespace JPH;
@@ -64,11 +65,7 @@ public:
             lines.reserve(10000000);
       }
 
-      struct DebugLineVertex
-      {
-            float x, y, z;
-            float r, g, b;
-      };
+      
 
       std::vector<DebugLineVertex> lines;
 
