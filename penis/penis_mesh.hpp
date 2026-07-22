@@ -198,11 +198,8 @@ struct Skeleton
       std::vector<BoneInfo> bone_info;
       std::vector<TRS> bind_pose;
       std::vector<glm::mat4> inv_bind_mats;
-      std::string name;
-      unsigned int bone_transform_SSBO;
+      std::string name;      
       unsigned int inv_bind_pose_SSBO;
-      unsigned int anim_pose_SSBO;
-      unsigned int anim_trs_SSBO;
       int bone_count;      
 };
 

@@ -33,13 +33,11 @@ public:
       unsigned int SCR_HEIGHT;
 
       GLuint bone_transform_SSBO;
-      GLuint inv_bind_pose_SSBO;
       GLuint anim_trs_SSBO;
 
       GLuint back_buffer_single_samp_FBO;
       GLuint back_buffer_single_samp_CT;
       GLuint back_buffer_single_samp_DT;
-      
       
       GLuint back_buffer_multi_samp_FBO;
       GLuint back_buffer_multi_samp_CT;

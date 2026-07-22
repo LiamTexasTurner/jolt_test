@@ -56,18 +56,8 @@ void PRenderer::UpdateBuffers(Scene* scene)
             inv_bind_mats.insert(inv_bind_mats.end(), skelton.inv_bind_mats.begin(), skelton.inv_bind_mats.end());
       }
 
-      glGenBuffers(1, &inv_bind_pose_SSBO);
       glGenBuffers(1, &bone_transform_SSBO);
       glGenBuffers(1, &anim_trs_SSBO);
-
-      {
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, inv_bind_pose_SSBO);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, inv_bind_pose_SSBO);
-            GLsizeiptr buffer_size = sizeof(glm::mat4) * inv_bind_mats.size();
-            glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, inv_bind_mats.data(), GL_STATIC_DRAW);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-      }
 
       {
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, bone_transform_SSBO);
@@ -697,7 +687,7 @@ void PRenderer::DefromAllMeshesWithSkeleton(const Skeleton* skeleton, span<const
       }
 
       unsigned int bone_count = skeleton->bone_count;
-      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_INV_BIND_POSE_BINDING, inv_bind_pose_SSBO);
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_INV_BIND_POSE_BINDING, skeleton->inv_bind_pose_SSBO);
       glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, bone_transform_SSBO);
       
       GLsizeiptr buffer_size = sizeof(TRS) * (bone_count * instances.size());
@@ -715,7 +705,7 @@ void PRenderer::DeformMeshGPU(const Skeleton* skeleton, std::span<const TRS> pos
 {
 
 
-      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_INV_BIND_POSE_BINDING, inv_bind_pose_SSBO);
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SKINNING_COMPUTE_INV_BIND_POSE_BINDING, skeleton->inv_bind_pose_SSBO);
       glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SCENE_BONE_MAT_SSBO_BINDING, bone_transform_SSBO);
       
       GLsizeiptr buffer_size = sizeof(TRS) * skeleton->bone_count;
