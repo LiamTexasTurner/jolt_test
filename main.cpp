@@ -12,6 +12,9 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+// #include <Jolt/Physics/Body/BodyCreationSettings.h>
+// #include <Jolt/Physics/Collision/Shape/SphereShape.h>
+
 #include <iostream>
 
 #include "penis/imgui_themes.hpp"
@@ -46,6 +49,7 @@ double last_time = 0.0;
 double accumulator = 0.0;
 double now = 0.0;
 double delta_time = 0.0;
+constexpr double fixed_dt = 1.0f / 60.0f;
 
 int main()
 {
@@ -154,22 +158,42 @@ int main()
       scene.Init();
 
       IRenderer* renderer = NewRenderer();
-      renderer->Init(&scene);
+      renderer->Init(&scene, p_jolt.mDebugRender);
 
       renderer->Resize(SCR_WIDTH, SCR_HEIGHT);
 
       IGameMode* game_mode = NewGameMode();
       game_mode->Init(&scene, window, renderer);
+
+      p_jolt.CreateSphere(glm::vec3(0.0f), 20.0f);
+
+      p_jolt.CreateSphere(glm::vec3(1.0f), 20.0f);
      
 
+      last_time = glfwGetTime();
+      accumulator = 0.0;
+      
       while(!glfwWindowShouldClose(window))
       {
+            glfwPollEvents();      
+            process_input(window);
+            
             now = glfwGetTime();
             delta_time = now - last_time;
             last_time = now;
-
-            glfwPollEvents();      
-            process_input(window);
+            if (delta_time > 0.25)
+            {
+                  delta_time = 0.25;
+            }
+            accumulator += delta_time;
+            
+            while (accumulator >= fixed_dt)
+            {
+                  accumulator -= fixed_dt;
+                  p_jolt.mPhysicsSystem->Update(fixed_dt, p_jolt.mCollisionSteps, p_jolt.mTempAllocator, p_jolt.mJobSystem);
+                  p_jolt.mDebugRender->lines.clear();
+                  p_jolt.mPhysicsSystem->DrawBodies(p_jolt.mBodyDrawSettings, p_jolt.mDebugRender);                  
+            }           
 
             game_mode->Update(delta_time);
 
@@ -205,8 +229,10 @@ int main()
                   PREV_SCR_WIDTH = SCR_WIDTH;
                   PREV_SCR_HEIGHT = SCR_HEIGHT;
             }
-       
+      
+            
             unsigned int render_texture = renderer->Paint();
+            
 
             ImGui::Image((ImTextureID)(intptr_t)render_texture,
                          ImVec2((float)SCR_WIDTH, (float)SCR_HEIGHT),

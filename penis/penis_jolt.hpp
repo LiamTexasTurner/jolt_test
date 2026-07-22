@@ -346,10 +346,12 @@ public:
 	JobSystem *                       	mJobSystemValidating = nullptr;								
 	PhysicsSystem *                   	mPhysicsSystem = nullptr;									
 	ContactListenerImpl *             	mContactListener = nullptr;
-      BodyActivationListenerImpl*         mBodyActivationListener = nullptr;
-      GunzCharacter*                      gunz_character;
+      BodyActivationListenerImpl*         mBodyActivationListener = nullptr;      
 
       int                                 mMaxConcurrentJobs = thread::hardware_concurrency();		
 	float                               mUpdateFrequency = 60.0f;									
 	int                                 mCollisionSteps = 2;
+
+
+      void CreateSphere(glm::vec3 world_pos, float radius);
 };

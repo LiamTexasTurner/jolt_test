@@ -2,6 +2,7 @@
 #include "renderer.hpp"
 #include "shaderset.h"
 #include "scene.hpp"
+#include "penis_jolt.hpp"
 #include "preamble.glsl"
 #include "glm/glm.hpp"
 #include <unordered_map>
@@ -15,6 +16,7 @@ public:
       PRenderer() = default;
 
       Scene* m_scene;
+      pDebugRender* m_debug_renderer;
 
       ShaderSet m_shaders;
       GLuint* m_scene_SP;
@@ -69,7 +71,7 @@ public:
       bool draw_skinned = false;
       void toggle_skinned(){draw_skinned = ! draw_skinned;}
       
-      void Init(Scene* scene) override;
+      void Init(Scene* scene, pDebugRender* debug_renderer) override;
       void UpdateBuffers(Scene* scene) override;
       void Resize(int width, int height) override;
       unsigned int Paint() override;
@@ -105,8 +107,7 @@ public:
       
       void DrawDebugLines(const glm::mat4& model,
                           const glm::mat4& view,
-                          const glm::mat4& projection,
-                          std::span<DebugLineVertex> lines);
+                          const glm::mat4& projection);
 
       std::vector<TRS> all_poses;
 

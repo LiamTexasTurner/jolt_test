@@ -1,11 +1,12 @@
 #pragma once
 
 class Scene;
+class pDebugRender;
 
 class IRenderer
 {
 public:
-      virtual void Init(Scene* scene) = 0;
+      virtual void Init(Scene* scene, pDebugRender* debug_renderer) = 0;
       virtual void UpdateBuffers(Scene* scene) = 0;
       virtual void Resize(int width, int height) = 0;
       virtual unsigned int Paint() = 0;
