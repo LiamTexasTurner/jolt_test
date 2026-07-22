@@ -65,7 +65,7 @@ struct ThreadContext
       Arena arena;
 };
 
-namespace JobSystem
+namespace P_JobSystem
 {
       std::vector<ThreadContext> thread_context;
 	uint32_t numThreads = 0;    // number of worker threads, it will be initialized in the Initialize() function
@@ -131,7 +131,7 @@ namespace JobSystem
 
 			// Name the thread:
 			std::wstringstream wss;
-			wss << "JobSystem_" << threadID;
+			wss << "P_JobSystem_" << threadID;
 			HRESULT hr = SetThreadDescription(handle, wss.str().c_str());
 			assert(SUCCEEDED(hr));
 #endif // _WIN32

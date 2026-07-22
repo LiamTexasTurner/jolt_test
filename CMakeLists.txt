@@ -4,6 +4,16 @@ project(SceneRenderer)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Configure Jolt before adding it.
+# set(OVERRIDE_CXX_FLAGS OFF CACHE BOOL "" FORCE)
+# set(INTERPROCEDURAL_OPTIMIZATION OFF CACHE BOOL "" FORCE)
+# set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(
+  C:/JoltPhysics/Build
+  ${CMAKE_BINARY_DIR}/JoltPhysics
+)
+
 add_executable(SceneRenderer
   main.cpp
   include/stb_image.cpp
@@ -22,6 +32,7 @@ add_executable(SceneRenderer
   penis/job_system.cpp
   penis/arena.cpp
   penis/animation_graph.cpp
+  penis/penis_jolt.cpp
 
 
   c:/imgui/imgui.cpp
@@ -34,21 +45,24 @@ add_executable(SceneRenderer
 )
 
 target_include_directories(SceneRenderer PRIVATE
-  c:/gli
-  include
+  include  
   penis_common
+  c:/gli  
   c:/cereal/include
   c:/imgui
   c:/imgui/backends
+  C:/JoltPhysics
 )
 
 target_link_directories(SceneRenderer PRIVATE
+  libs
   include/GLFW
   c:/imgui
   c:/imgui/backends
 )
 
 target_link_libraries(SceneRenderer PRIVATE
+  Jolt
   glfw3
   opengl32
   gdi32
@@ -57,5 +71,8 @@ target_link_libraries(SceneRenderer PRIVATE
 
 target_compile_definitions(SceneRenderer PRIVATE
   GLM_FORCE_CTOR_INIT
+  JPH_DEBUG_RENDERER
+  JPH_PROFILE_ENABLED
+  JPH_OBJECT_STREAM
 )
   

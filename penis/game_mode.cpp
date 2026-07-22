@@ -173,7 +173,7 @@ public:
                   
             // }
             
-            JobSystem::Dispatch(m_scene->animation_graphs.size(),
+            P_JobSystem::Dispatch(m_scene->animation_graphs.size(),
                                 1,
                                 [this, dt]
                                 (JobDispatchArgs args, Arena& arena)
@@ -182,7 +182,7 @@ public:
                   TickAnimGraph(arena, graph, dt, args.jobIndex);
             });
 
-            JobSystem::Wait();
+            P_JobSystem::Wait();
       
 
             

@@ -20,6 +20,7 @@
 #include "penis/game_mode.hpp"
 #include "penis/input.hpp"
 #include "penis/job_system.h"
+#include "penis/penis_jolt.hpp"
 
 
 #include <vector>
@@ -53,7 +54,9 @@ int main()
       _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_DEBUG);
       _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_DEBUG);
 #endif
-      JobSystem::Initialize();
+      P_JobSystem::Initialize();
+      pJolt p_jolt;
+
       glfwInit();
       glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
       glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
