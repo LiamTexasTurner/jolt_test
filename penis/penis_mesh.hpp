@@ -193,7 +193,7 @@ struct Animation
       int frame_count = 0;  
 };
 
-struct Skeleton
+struct pSkeleton
 {
       std::vector<BoneInfo> bone_info;
       std::vector<TRS> bind_pose;

@@ -53,7 +53,7 @@ public:
       packed_freelist<Mesh> meshes;
       
       packed_freelist<SkinnedMesh> skinned_meshes;
-      packed_freelist<Skeleton> skeletons;
+      packed_freelist<pSkeleton> skeletons;
       packed_freelist<Animation> animations;      
       packed_freelist<AnimationGraph> animation_graphs;
 

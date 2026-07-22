@@ -9,7 +9,7 @@ struct JobDispatchArgs
 	uint32_t groupIndex;
 };
 
-namespace P_JobSystem
+namespace pJobSystem
 {
 	// Create the internal resources such as worker threads, etc. Call it once when initializing the application.
 	void Initialize();

@@ -111,9 +111,9 @@ public:
 
       std::vector<TRS> all_poses;
 
-      void DeformMeshGPU(const Skeleton* skeleton, std::span<const TRS> poses, GLuint* skinning_compute_shader);
+      void DeformMeshGPU(const pSkeleton* skeleton, std::span<const TRS> poses, GLuint* skinning_compute_shader);
 
-      void DefromAllMeshesWithSkeleton(const Skeleton* skeleton,  std::span<const uint32_t> instances);
+      void DefromAllMeshesWithSkeleton(const pSkeleton* skeleton,  std::span<const uint32_t> instances);
       
       void BlitFrameBuffer(GLuint& read_buffer, GLuint draw_buffer, int width, int height);
 

@@ -180,7 +180,7 @@ void Scene::Init()
       diffuse_maps     = packed_freelist<DiffuseMap>(512);
       materials        = packed_freelist<Material>(512);
       meshes           = packed_freelist<Mesh>(512);
-      skeletons        = packed_freelist<Skeleton>(512);
+      skeletons        = packed_freelist<pSkeleton>(512);
       skinned_meshes   = packed_freelist<SkinnedMesh>(512);
       animations       = packed_freelist<Animation>(512);
       animation_graphs = packed_freelist<AnimationGraph>(512);
@@ -515,7 +515,7 @@ uint32_t LoadSkeletalMesh(Scene& scene, MeshData& mesh_data)
       
 uint32_t LoadSkeleton(Scene& scene, SkeletonData& skeleton_data)
 {
-      Skeleton new_skeleton;
+      pSkeleton new_skeleton;
 
       new_skeleton.name = skeleton_data.name;
       new_skeleton.bone_count = skeleton_data.bone_count;

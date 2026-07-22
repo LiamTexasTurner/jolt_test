@@ -8,6 +8,7 @@
 #include <Jolt/Renderer/DebugRendererSimple.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 #include <Jolt/Physics/Collision/ContactListener.h>
+#include <Jolt/Physics/Ragdoll/Ragdoll.h>
 
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -355,4 +356,6 @@ public:
 
       void CreateSphere(glm::vec3 world_pos, float radius);
       void CreateBox(glm::vec3 world_pos, glm::vec3 dim);
+      RagdollSettings* CreateRagdoll();
+      Ragdoll* AddRagdoll();
 };

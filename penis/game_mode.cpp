@@ -66,7 +66,7 @@ public:
                   cereal::BinaryInputArchive i_archive(is);
                   i_archive(chips_mesh);
 
-                  Skeleton chips_skeleton = scene->skeletons[chips_skeleton_ID];
+                  pSkeleton chips_skeleton = scene->skeletons[chips_skeleton_ID];
                   AnimationGraph chips_graph(&m_scene->animations,
                                              chips_skeleton.bone_count,
                                              chips_skeleton_ID,
@@ -177,7 +177,7 @@ public:
                   
             // }
             
-            P_JobSystem::Dispatch(m_scene->animation_graphs.size(),
+            pJobSystem::Dispatch(m_scene->animation_graphs.size(),
                                 1,
                                 [this, dt]
                                 (JobDispatchArgs args, Arena& arena)
@@ -186,7 +186,7 @@ public:
                   TickAnimGraph(arena, graph, dt, args.jobIndex);
             });
 
-            P_JobSystem::Wait();
+            pJobSystem::Wait();
       
 
             

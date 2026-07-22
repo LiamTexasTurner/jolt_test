@@ -65,7 +65,7 @@ struct ThreadContext
       Arena arena;
 };
 
-namespace P_JobSystem
+namespace pJobSystem
 {
       std::vector<ThreadContext> thread_context;
 	uint32_t numThreads = 0;    // number of worker threads, it will be initialized in the Initialize() function

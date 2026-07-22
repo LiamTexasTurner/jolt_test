@@ -58,7 +58,7 @@ int main()
       _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_DEBUG);
       _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_DEBUG);
 #endif
-      P_JobSystem::Initialize();
+      pJobSystem::Initialize();
       pJolt p_jolt;
 
       glfwInit();
@@ -168,6 +168,7 @@ int main()
       p_jolt.CreateSphere(glm::vec3(1.0f, 5.0f, 0.0f), 20.0f);
       p_jolt.CreateSphere(glm::vec3(-1.0f, 5.0f, 0.0f), 20.0f);
       p_jolt.CreateBox(glm::vec3(0.0f), glm::vec3(10.0f, 1.0f, 10.0f));
+      p_jolt.AddRagdoll();
 
       last_time = glfwGetTime();
       accumulator = 0.0;
@@ -191,7 +192,7 @@ int main()
                   accumulator -= fixed_dt;
                   game_mode->PhysicsUpdate(fixed_dt);
                   p_jolt.mDebugRender->lines.clear();
-                  P_JobSystem::Execute([&](Arena& arena)
+                  pJobSystem::Execute([&](Arena& arena)
                   {
                         p_jolt.mPhysicsSystem->DrawBodies(p_jolt.mBodyDrawSettings, p_jolt.mDebugRender);                  
                   });
@@ -233,7 +234,7 @@ int main()
             }
       
 
-            P_JobSystem::Wait();
+            pJobSystem::Wait();
             unsigned int render_texture = renderer->Paint();
             
 

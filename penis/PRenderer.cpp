@@ -77,7 +77,7 @@ void PRenderer::UpdateBuffers(Scene* scene)
       vector<glm::mat4> inv_bind_mats;
       for(int i = 0; i < scene->skeletons.size(); i++)
       {
-            Skeleton& skelton = scene->skeletons[i];
+            pSkeleton& skelton = scene->skeletons[i];
             inv_bind_mats.reserve(inv_bind_mats.size() + skelton.inv_bind_mats.size());
             inv_bind_mats.insert(inv_bind_mats.end(), skelton.inv_bind_mats.begin(), skelton.inv_bind_mats.end());
       }
@@ -347,7 +347,7 @@ void PRenderer::CreateDrawList()
             {
                   
                   const SkinnedMesh& skinned_mesh = m_scene->skinned_meshes[instance.skinned_mesh_ID];
-                  const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh.skeleton_ID];
+                  const pSkeleton* skeleton = &m_scene->skeletons[skinned_mesh.skeleton_ID];
                   
                   auto it = skeleton_instance_map.try_emplace(skinned_mesh.skeleton_ID, instance_index);
                   it.first->second.push_back(instance_index);
@@ -541,7 +541,7 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
       //draw skinned meshes
       for(const auto& [skeleton_ID, skinned_mesh_indices] : skeleton_instance_map)
       {
-            const Skeleton* skeleton = &m_scene->skeletons[skeleton_ID];
+            const pSkeleton* skeleton = &m_scene->skeletons[skeleton_ID];
             DefromAllMeshesWithSkeleton(skeleton, skinned_mesh_indices);
 
             glUseProgram(*m_skinning);
@@ -555,7 +555,7 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
                   uint32_t instance_index = skinned_mesh_indices[i];
                   const Instance* instance = &m_scene->instances[instance_index];
                   const SkinnedMesh* skinned_mesh = &m_scene->skinned_meshes[instance->skinned_mesh_ID];
-                  const Skeleton* skeleton = &m_scene->skeletons[skinned_mesh->skeleton_ID];
+                  const pSkeleton* skeleton = &m_scene->skeletons[skinned_mesh->skeleton_ID];
 
                   Transform* transform = &m_scene->transforms[instance->transform_ID];
                   transform->scale = glm::vec3(1.0f);
@@ -727,7 +727,7 @@ void PRenderer::DrawDebugLines(const glm::mat4& model,
       ResetRenderState();
 }
 
-void PRenderer::DefromAllMeshesWithSkeleton(const Skeleton* skeleton, span<const uint32_t> instances)
+void PRenderer::DefromAllMeshesWithSkeleton(const pSkeleton* skeleton, span<const uint32_t> instances)
 {
 
       glUseProgram(*m_skin_compute);
@@ -756,7 +756,7 @@ void PRenderer::DefromAllMeshesWithSkeleton(const Skeleton* skeleton, span<const
       glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
-void PRenderer::DeformMeshGPU(const Skeleton* skeleton, std::span<const TRS> poses, GLuint* skinning_compute_shader)
+void PRenderer::DeformMeshGPU(const pSkeleton* skeleton, std::span<const TRS> poses, GLuint* skinning_compute_shader)
 {
 
 
