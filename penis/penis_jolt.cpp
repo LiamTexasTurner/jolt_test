@@ -2,7 +2,7 @@
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
-
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
 
 pJolt::pJolt()
 {
@@ -56,4 +56,15 @@ void pJolt::CreateSphere(glm::vec3 world_pos, float radius)
       
       BodyID sphere_ID = mPhysicsSystem->GetBodyInterface().CreateAndAddBody(sphere_settings, EActivation::Activate);
 
+}
+void pJolt::CreateBox(glm::vec3 world_pos, glm::vec3 dim)
+{
+      BoxShapeSettings floor_shape_settings(Vec3(5.0f, 0.2f, 5.0f));
+	floor_shape_settings.SetEmbedded(); 
+	ShapeSettings::ShapeResult floor_shape_result = floor_shape_settings.Create();
+	ShapeRefC floor_shape = floor_shape_result.Get(); 
+	BodyCreationSettings floor_settings(floor_shape, RVec3(0.0_r, -1.0_r, 0.0_r), Quat::sIdentity(), EMotionType::Static, Layers::NON_MOVING);
+      BodyInterface& body_interface = mPhysicsSystem->GetBodyInterface();
+	Body *floor = body_interface.CreateBody(floor_settings); 
+	body_interface.AddBody(floor->GetID(), EActivation::DontActivate);
 }

@@ -354,4 +354,5 @@ public:
 
 
       void CreateSphere(glm::vec3 world_pos, float radius);
+      void CreateBox(glm::vec3 world_pos, glm::vec3 dim);
 };

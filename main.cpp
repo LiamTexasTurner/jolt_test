@@ -165,9 +165,11 @@ int main()
       IGameMode* game_mode = NewGameMode();
       game_mode->Init(&scene, window, renderer);
 
-      p_jolt.CreateSphere(glm::vec3(0.0f), 20.0f);
+      p_jolt.CreateSphere(glm::vec3(1.0f, 5.0f, 0.0f), 20.0f);
 
-      p_jolt.CreateSphere(glm::vec3(1.0f), 20.0f);
+      p_jolt.CreateSphere(glm::vec3(-1.0f, 5.0f, 0.0f), 20.0f);
+
+      p_jolt.CreateBox(glm::vec3(0.0f), glm::vec3(10.0f, 1.0f, 10.0f));
      
 
       last_time = glfwGetTime();
