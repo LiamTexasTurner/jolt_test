@@ -1,6 +1,4 @@
-﻿
-
-#include <glad/glad.h>
+﻿#include <glad/glad.h>
 
 #include <GLFW/glfw3.h>
 
@@ -221,7 +219,34 @@ int main()
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             
             glfwSwapBuffers(window);
-      }      
+      }
+      
+      std::cout << "Exited game loop" << std::endl;
+      
+      
+
+
+      delete game_mode;
+      
+
+      
+      delete renderer;
+      pJobSystem::Shutdown();
+
+      
+      ImGui_ImplOpenGL3_Shutdown();
+      ImGui_ImplGlfw_Shutdown();
+      ImGui::DestroyContext();
+      
+
+      
+      glfwDestroyWindow(window);
+      glfwTerminate();
+      
+
+      
+      
+      
       return 0;
 }
 

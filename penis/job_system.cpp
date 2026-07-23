@@ -1,63 +1,63 @@
-#include "job_system.h"    // include our interface
+#include "job_system.h"
 
-#include <algorithm>    // std::max
-#include <atomic>    // to use std::atomic<uint64_t>
-#include <thread>    // to use std::thread
-#include <condition_variable>    // to use std::condition_variable
+#include <algorithm>
+#include <atomic>
+#include <thread>
+#include <condition_variable>
 #include <sstream>
-#include <assert.h>
-
+#include <cassert>
+#include <functional>
+#include <mutex>
+#include <vector>
 
 #ifdef _WIN32
+
 #define NOMINMAX
 #include <Windows.h>
+
 #endif
 
-// Fixed size very simple thread safe ring buffer
-template <typename T, size_t capacity>
+template<typename T, size_t capacity>
 class ThreadSafeRingBuffer
 {
 public:
-	// Push an item to the end if there is free space
-	//	Returns true if succesful
-	//	Returns false if there is not enough space
-	inline bool push_back(const T& item)
-	{
-		bool result = false;
-		lock.lock();
-		size_t next = (head + 1) % capacity;
-		if (next != tail)
-		{
-			data[head] = item;
-			head = next;
-			result = true;
-		}
-		lock.unlock();
-		return result;
-	}
+      bool push_back(const T& item)
+      {
+            std::lock_guard<std::mutex> guard(lock);
 
-	// Get an item if there are any
-	//	Returns true if succesful
-	//	Returns false if there are no items
-	inline bool pop_front(T& item)
-	{
-		bool result = false;
-		lock.lock();
-		if (tail != head)
-		{
-			item = data[tail];
-			tail = (tail + 1) % capacity;
-			result = true;
-		}
-		lock.unlock();
-		return result;
-	}
+            size_t next = (head + 1) % capacity;
+
+            if (next == tail)
+            {
+                  return false;
+            }
+
+            data[head] = item;
+            head = next;
+
+            return true;
+      }
+
+      bool pop_front(T& item)
+      {
+            std::lock_guard<std::mutex> guard(lock);
+
+            if (tail == head)
+            {
+                  return false;
+            }
+
+            item = std::move(data[tail]);
+            tail = (tail + 1) % capacity;
+
+            return true;
+      }
 
 private:
-	T data[capacity];
-	size_t head = 0;
-	size_t tail = 0;
-	std::mutex lock; // this just works better than a spinlock here (on windows)
+      T data[capacity];
+      size_t head = 0;
+      size_t tail = 0;
+      std::mutex lock;
 };
 
 struct ThreadContext
@@ -68,145 +68,262 @@ struct ThreadContext
 namespace pJobSystem
 {
       std::vector<ThreadContext> thread_context;
-	uint32_t numThreads = 0;    // number of worker threads, it will be initialized in the Initialize() function
-	ThreadSafeRingBuffer<std::function<void(Arena&)>, 256> jobPool;    // a thread safe queue to put pending jobs onto the end (with a capacity of 256 jobs). A worker thread can grab a job from the beginning
-	std::condition_variable wakeCondition;    // used in conjunction with the wakeMutex below. Worker threads just sleep when there is no job, and the main thread can wake them up
-	std::mutex wakeMutex;    // used in conjunction with the wakeCondition above
-	uint64_t currentLabel = 0;    // tracks the state of execution of the main thread
-	std::atomic<uint64_t> finishedLabel;    // track the state of execution across background worker threads
+      std::vector<std::thread> worker_threads;
 
+      uint32_t numThreads = 0;
 
-	void Initialize()
-	{
-		// Initialize the worker execution state to 0:
-		finishedLabel.store(0);
+      ThreadSafeRingBuffer<std::function<void(Arena&)>, 256> jobPool;
 
-		// Retrieve the number of hardware threads in this system:
-		auto numCores = std::thread::hardware_concurrency();
+      std::condition_variable wakeCondition;
+      std::mutex wakeMutex;
 
-		// Calculate the actual number of worker threads we want:
-		numThreads = std::max(1u, numCores);
+      uint64_t currentLabel = 0;
+      std::atomic<uint64_t> finishedLabel{0};
+
+      size_t queuedJobs = 0;
+      bool running = false;
+
+      void Initialize()
+      {
+            if (running)
+            {
+                  return;
+            }
+
+            finishedLabel.store(0);
+            currentLabel = 0;
+            queuedJobs = 0;
+            running = true;
+
+            uint32_t numCores = std::thread::hardware_concurrency();
+
+            if (numCores == 0)
+            {
+                  numCores = 1;
+            }
+
+            numThreads = std::max(1u, numCores);
 
             thread_context.resize(numThreads);
+            worker_threads.reserve(numThreads);
 
-		// Create all our worker threads while immediately starting them:
-		for (uint32_t threadID = 0; threadID < numThreads; ++threadID)
-		{
-			std::thread worker([threadID] {
-
-                        Arena &arena = thread_context[threadID].arena;
-
-                        std::function<void(Arena&)> job;
-
-                        while(true)
+            for (uint32_t threadID = 0; threadID < numThreads; ++threadID)
+            {
+                  worker_threads.emplace_back(
+                        [threadID]()
                         {
-                              if(jobPool.pop_front(job))
-                              {
-                                    arena_reset(&arena);
+                              Arena& arena = thread_context[threadID].arena;
 
+                              while (true)
+                              {
+                                    std::function<void(Arena&)> job;
+
+                                    {
+                                          std::unique_lock<std::mutex> lock(wakeMutex);
+
+                                          wakeCondition.wait(
+                                                lock,
+                                                []()
+                                                {
+                                                      return !running || queuedJobs > 0;
+                                                }
+                                          );
+
+                                          if (!running && queuedJobs == 0)
+                                          {
+                                                break;
+                                          }
+
+                                          if (!jobPool.pop_front(job))
+                                          {
+                                                continue;
+                                          }
+
+                                          --queuedJobs;
+                                    }
+
+                                    arena_reset(&arena);
                                     job(arena);
 
-                                    finishedLabel.fetch_add(1);
-                              }
-                              else
-                              {
-                                    std::unique_lock<std::mutex> lock(wakeMutex);
-                                    wakeCondition.wait(lock);
+                                    finishedLabel.fetch_add(
+                                          1,
+                                          std::memory_order_release
+                                    );
                               }
                         }
-                  });
+                  );
 
 #ifdef _WIN32
-			// Do Windows-specific thread setup:
-			HANDLE handle = (HANDLE)worker.native_handle();
 
-			// Put each thread on to dedicated core
-			DWORD_PTR affinityMask = 1ull << threadID;
-			DWORD_PTR affinity_result = SetThreadAffinityMask(handle, affinityMask);
-			assert(affinity_result > 0);
+                  std::thread& worker = worker_threads.back();
+                  HANDLE handle = reinterpret_cast<HANDLE>(worker.native_handle());
 
-			//// Increase thread priority:
-			//BOOL priority_result = SetThreadPriority(handle, THREAD_PRIORITY_HIGHEST);
-			//assert(priority_result != 0);
+                  if (threadID < sizeof(DWORD_PTR) * 8)
+                  {
+                        DWORD_PTR affinityMask = DWORD_PTR{1} << threadID;
+                        DWORD_PTR affinityResult = SetThreadAffinityMask(handle, affinityMask);
 
-			// Name the thread:
-			std::wstringstream wss;
-			wss << "P_JobSystem_" << threadID;
-			HRESULT hr = SetThreadDescription(handle, wss.str().c_str());
-			assert(SUCCEEDED(hr));
-#endif // _WIN32
+                        assert(affinityResult > 0);
+                  }
 
-			worker.detach(); // forget about this thread, let it do it's job in the infinite loop that we created above
-		}
-	}
+                  std::wstringstream name;
+                  name << L"P_JobSystem_" << threadID;
 
-	// This little helper function will not let the system to be deadlocked while the main thread is waiting for something
-	inline void poll()
-	{
-		wakeCondition.notify_one(); // wake one worker thread
-		std::this_thread::yield(); // allow this thread to be rescheduled
-	}
+                  HRESULT result = SetThreadDescription(handle, name.str().c_str());
 
-	void Execute(const std::function<void(Arena&)>& job)
-	{
-		// The main thread label state is updated:
-		currentLabel += 1;
+                  assert(SUCCEEDED(result));
 
-		// Try to push a new job until it is pushed successfully:
-		while (!jobPool.push_back(job)) { poll(); }
+#endif
+            }
+      }
 
-		wakeCondition.notify_one(); // wake one thread
-	}
+      void poll()
+      {
+            wakeCondition.notify_one();
+            std::this_thread::yield();
+      }
 
-	bool IsBusy()
-	{
-		// Whenever the main thread label is not reached by the workers, it indicates that some worker is still alive
-		return finishedLabel.load() < currentLabel;
-	}
+      void Execute(const std::function<void(Arena&)>& job)
+      {
+            assert(running);
 
-	void Wait()
-	{
-		while (IsBusy()) { poll(); }
-	}
+            ++currentLabel;
 
-	void Dispatch(uint32_t jobCount, uint32_t groupSize, const std::function<void(JobDispatchArgs, Arena&)>& job)
-	{
-		if (jobCount == 0 || groupSize == 0)
-		{
-			return;
-		}
+            while (true)
+            {
+                  bool pushed = false;
 
-		// Calculate the amount of job groups to dispatch (overestimate, or "ceil"):
-		const uint32_t groupCount = (jobCount + groupSize - 1) / groupSize;
+                  {
+                        std::lock_guard<std::mutex> lock(wakeMutex);
 
-		// The main thread label state is updated:
-		currentLabel += groupCount;
+                        pushed = jobPool.push_back(job);
 
-		for (uint32_t groupIndex = 0; groupIndex < groupCount; ++groupIndex)
-		{
-			// For each group, generate one real job:
-			const auto& jobGroup = [jobCount, groupSize, job, groupIndex](Arena& arena) {
+                        if (pushed)
+                        {
+                              ++queuedJobs;
+                        }
+                  }
 
-				// Calculate the current group's offset into the jobs:
-				const uint32_t groupJobOffset = groupIndex * groupSize;
-				const uint32_t groupJobEnd = std::min(groupJobOffset + groupSize, jobCount);
+                  if (pushed)
+                  {
+                        wakeCondition.notify_one();
+                        return;
+                  }
 
-				JobDispatchArgs args;
-				args.groupIndex = groupIndex;
+                  poll();
+            }
+      }
 
-				// Inside the group, loop through all job indices and execute job for each index:
-				for (uint32_t i = groupJobOffset; i < groupJobEnd; ++i)
-				{
-					args.jobIndex = i;
-					job(args, arena);
-				}
-			};
+      bool IsBusy()
+      {
+            return finishedLabel.load(std::memory_order_acquire) < currentLabel;
+      }
 
-			// Try to push a new job until it is pushed successfully:
-			while (!jobPool.push_back(jobGroup)) { poll(); }
+      void Wait()
+      {
+            while (IsBusy())
+            {
+                  poll();
+            }
+      }
 
-			wakeCondition.notify_one(); // wake one thread
-		}
-	}
+      void Dispatch(
+            uint32_t jobCount,
+            uint32_t groupSize,
+            const std::function<void(JobDispatchArgs, Arena&)>& job)
+      {
+            assert(running);
+
+            if (jobCount == 0 || groupSize == 0)
+            {
+                  return;
+            }
+
+            uint32_t groupCount =
+                  (jobCount + groupSize - 1) / groupSize;
+
+            currentLabel += groupCount;
+
+            for (uint32_t groupIndex = 0; groupIndex < groupCount; ++groupIndex)
+            {
+                  std::function<void(Arena&)> jobGroup =
+                        [jobCount, groupSize, job, groupIndex](Arena& arena)
+                        {
+                              uint32_t groupJobOffset =
+                                    groupIndex * groupSize;
+
+                              uint32_t groupJobEnd =
+                                    std::min(
+                                          groupJobOffset + groupSize,
+                                          jobCount
+                                    );
+
+                              JobDispatchArgs args;
+                              args.groupIndex = groupIndex;
+
+                              for (uint32_t i = groupJobOffset; i < groupJobEnd; ++i)
+                              {
+                                    args.jobIndex = i;
+                                    job(args, arena);
+                              }
+                        };
+
+                  while (true)
+                  {
+                        bool pushed = false;
+
+                        {
+                              std::lock_guard<std::mutex> lock(wakeMutex);
+
+                              pushed = jobPool.push_back(jobGroup);
+
+                              if (pushed)
+                              {
+                                    ++queuedJobs;
+                              }
+                        }
+
+                        if (pushed)
+                        {
+                              wakeCondition.notify_one();
+                              break;
+                        }
+
+                        poll();
+                  }
+            }
+      }
+
+      void Shutdown()
+      {
+            if (!running)
+            {
+                  return;
+            }
+
+            Wait();
+
+            {
+                  std::lock_guard<std::mutex> lock(wakeMutex);
+                  running = false;
+            }
+
+            wakeCondition.notify_all();
+
+            for (std::thread& worker : worker_threads)
+            {
+                  if (worker.joinable())
+                  {
+                        worker.join();
+                  }
+            }
+
+            worker_threads.clear();
+            thread_context.clear();
+
+            numThreads = 0;
+            queuedJobs = 0;
+            currentLabel = 0;
+            finishedLabel.store(0);
+      }
 }
-
