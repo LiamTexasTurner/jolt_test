@@ -29,7 +29,7 @@ inline glm::mat4 j_mat4_to_glm(const JPH::RMat44& m)
 pDebugRenderer::pDebugRenderer()
 {
       DebugRenderer::Initialize();
-      debug_line_SP.ShaderInit("../shaders/debug_line.vert", "../shaders/debug_line.frag");
+      debug_line_SP.ShaderInit("../shaders/debug_line.vs", "../shaders/debug_line.fs");
 }
             
 void pDebugRenderer::DrawLine(RVec3Arg inFrom, RVec3Arg inTo, ColorArg inColor) 
@@ -85,11 +85,9 @@ void pDebugRenderer::DrawGeometry(RMat44Arg inModelMatrix,
 {
       
       pRenderPrimitive* prim = dynamic_cast<pRenderPrimitive*>(inGeometry.GetPtr()->mLODs[(inGeometry.GetPtr()->mLODs.size() - 1)].mTriangleBatch.GetPtr());
-      // pRenderPrimitive* prim = dynamic_cast<pRenderPrimitive*>(inGeometry.GetPtr()->mLODs[0].mTriangleBatch.GetPtr());
       
       GLuint VAO = prim->VAO;
       GLuint VBO = prim->VBO;
-
       
       debug_line_SP.use();      
       

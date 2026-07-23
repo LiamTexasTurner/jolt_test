@@ -26,11 +26,13 @@ public:
       GLuint* m_debug_depth_map_SP;
       GLuint* m_blit_texture_SP;
       GLuint* m_blit_test_SP;
+      GLuint* m_debug_line_SP;
       GLuint* m_PP_invert_color;
       GLuint* m_PP_crt;
       GLuint* m_PP_clear;
       GLuint* m_skinning;
       GLuint* m_skin_compute;
+      
       
       unsigned int SCR_WIDTH;
       unsigned int SCR_HEIGHT;
@@ -105,8 +107,7 @@ public:
                            const glm::vec3& light_pos,
                            const glm::vec3& dir_light_col);
       
-      void DrawDebugLines(const glm::mat4& model,
-                          const glm::mat4& view,
+      void DrawDebugLines(const glm::mat4& view,
                           const glm::mat4& projection);
 
       std::vector<TRS> all_poses;

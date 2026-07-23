@@ -34,6 +34,7 @@ void PRenderer::Init(Scene* scene, pJolt* p_jolt)
       m_debug_depth_map_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/debug_depth_map.frag"});
       m_blit_texture_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_texture.frag"});
       m_blit_test_SP = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/blit_test.frag"});
+      m_debug_line_SP = m_shaders.AddProgramFromExts({"../shaders/debug_line.vert", "../shaders/debug_line.frag"});
       m_PP_invert_color = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_invert_color.frag"});
       m_PP_crt = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_crt.frag"});
       m_PP_clear = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_clear.frag"});
@@ -293,14 +294,7 @@ unsigned int PRenderer::Paint()
 
       BlitFrameBuffer(back_buffer_multi_samp_FBO, back_buffer_single_samp_FBO, SCR_WIDTH, SCR_HEIGHT);
 
-      // DrawDebugLines(glm::mat4(1.0f), view, projection);
-      glBindFramebuffer(GL_FRAMEBUFFER, back_buffer_single_samp_FBO);
-      glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-      glEnable(GL_DEPTH_TEST);
-      m_p_jolt->mDebugRenderer->view = view;
-      m_p_jolt->mDebugRenderer->projection = projection;
-      m_p_jolt->mPhysicsSystem->DrawBodies(m_p_jolt->mBodyDrawSettings, m_p_jolt->mDebugRenderer);
-      ResetRenderState();
+      DrawDebugLines(view, projection);
       
       PostProcess(back_buffer_single_samp_CT, m_PP_clear, 0, 0, SCR_WIDTH, SCR_HEIGHT);
 
@@ -706,11 +700,17 @@ void PRenderer::DrawTransparent(const glm::mat4& projection,
 
 }
 
-void PRenderer::DrawDebugLines(const glm::mat4& model,
-                               const glm::mat4& view,
+void PRenderer::DrawDebugLines(const glm::mat4& view,
                                const glm::mat4& projection)
 {
       
+      glBindFramebuffer(GL_FRAMEBUFFER, back_buffer_single_samp_FBO);
+      glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+      glEnable(GL_DEPTH_TEST);
+      m_p_jolt->mDebugRenderer->view = view;
+      m_p_jolt->mDebugRenderer->projection = projection;
+      m_p_jolt->mPhysicsSystem->DrawBodies(m_p_jolt->mBodyDrawSettings, m_p_jolt->mDebugRenderer);
+      ResetRenderState();
 }
 
 void PRenderer::DefromAllMeshesWithSkeleton(const pSkeleton* skeleton, span<const uint32_t> instances)

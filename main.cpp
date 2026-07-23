@@ -12,9 +12,6 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-// #include <Jolt/Physics/Body/BodyCreationSettings.h>
-// #include <Jolt/Physics/Collision/Shape/SphereShape.h>
-
 #include <iostream>
 
 #include "penis/imgui_themes.hpp"
@@ -228,13 +225,8 @@ int main()
                   PREV_SCR_WIDTH = SCR_WIDTH;
                   PREV_SCR_HEIGHT = SCR_HEIGHT;
             }
-
-            
       
-
-      
-            unsigned int render_texture = renderer->Paint();
-                  
+            unsigned int render_texture = renderer->Paint();                  
 
             ImGui::Image((ImTextureID)(intptr_t)render_texture,
                          ImVec2((float)SCR_WIDTH, (float)SCR_HEIGHT),

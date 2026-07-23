@@ -1,10 +1,11 @@
-#version 330 core
+layout (location = DEBUG_REN_POS_ATTRIB_LOCATION) in vec3 aPos;
+layout (location = DEBUG_REN_COL_ATTRIB_LOCATION) in vec3 aColor;
 
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aColor;
-
+layout (location = DEBUG_REN_MODEL_UNIFORM_LOCATION)
 uniform mat4 model;
+layout (location = DEBUG_REN_VIEW_UNIFORM_LOCATION)
 uniform mat4 view;
+layout (location = DEBUG_REN_PROJECTION_UNIFORM_LOCATION)
 uniform mat4 projection;
 
 out vec3 color;
