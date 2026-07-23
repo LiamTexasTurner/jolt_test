@@ -221,7 +221,8 @@ uint32_t LoadMesh(Scene& scene, MeshData& mesh_data)
                   {
                         MaterialLoadData& data = it->second;
 
-                        GLuint texture_ID = create_texture(data.diffuse_path.c_str());
+                        string mat_path = "../resources/" + data.diffuse_path;
+                        GLuint texture_ID = create_texture(mat_path.c_str());
 
                         DiffuseMap new_diffuse_map;
                         new_diffuse_map.DiffuseMapTO = texture_ID;                  
@@ -415,8 +416,9 @@ uint32_t LoadSkeletalMesh(Scene& scene, MeshData& mesh_data)
             if(it != mesh_data.material_load_map.end())
             {
                   MaterialLoadData& data = it->second;
-
-                  GLuint texture_ID = create_texture(data.diffuse_path.c_str());
+                
+                  string mat_path = "../resources/" + data.diffuse_path;
+                  GLuint texture_ID = create_texture(mat_path.c_str());
 
                   DiffuseMap new_diffuse_map;
                   new_diffuse_map.DiffuseMapTO = texture_ID;                  
