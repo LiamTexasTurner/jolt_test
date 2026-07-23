@@ -163,11 +163,11 @@ int main()
       IGameMode* game_mode = NewGameMode();
       game_mode->Init(&scene, &p_jolt, window, renderer);
 
-      p_jolt.CreateSphere(glm::vec3(1.0f, 5.0f, 0.0f), 20.0f);
-      p_jolt.CreateSphere(glm::vec3(-1.0f, 5.0f, 0.0f), 20.0f);
+      // p_jolt.CreateSphere(glm::vec3(1.0f, 5.0f, 0.0f), 20.0f);
+      // p_jolt.CreateSphere(glm::vec3(-1.0f, 5.0f, 0.0f), 20.0f);
       p_jolt.CreateBox(glm::vec3(0.0f), glm::vec3(10.0f, 1.0f, 10.0f));
-      p_jolt.AddRagdoll();
-
+      scene.ragdolls.insert(p_jolt.AddRagdoll());
+      
       last_time = glfwGetTime();
       accumulator = 0.0;
       
@@ -188,6 +188,7 @@ int main()
             while (accumulator >= fixed_dt)
             {
                   accumulator -= fixed_dt;
+                  game_mode->PrePhysicsUpdate(fixed_dt);
                   game_mode->PhysicsUpdate(fixed_dt);
             }
       

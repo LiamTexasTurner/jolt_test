@@ -264,10 +264,11 @@ RagdollSettings* pJolt::CreateRagdoll()
 
 	return settings;
 }
+
 Ragdoll* pJolt::AddRagdoll()
 {
       RagdollSettings * ragdoll_settings = CreateRagdoll();
       Ragdoll* ragdoll = ragdoll_settings->CreateRagdoll(0, 0, mPhysicsSystem);
-      ragdoll->AddToPhysicsSystem(EActivation::Activate);
+      ragdoll->AddToPhysicsSystem(EActivation::DontActivate);
       return ragdoll;
 }

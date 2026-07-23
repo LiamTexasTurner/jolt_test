@@ -188,6 +188,7 @@ void Scene::Init()
       instances        = packed_freelist<Instance>(4096);
       cameras          = packed_freelist<Camera>(32);
       skyboxes         = packed_freelist<Skybox>(32);
+      ragdolls         = packed_freelist<JPH::Ragdoll*>(512);
 
       //defualts
 
@@ -522,6 +523,11 @@ uint32_t LoadSkeleton(Scene& scene, SkeletonData& skeleton_data)
       new_skeleton.bone_info = skeleton_data.bone_info;
       new_skeleton.inv_bind_mats = skeleton_data.inv_bind_mats;
       new_skeleton.bind_pose = skeleton_data.bind_pose;
+
+      for(BoneInfo& bone_info : new_skeleton.bone_info)
+      {
+            new_skeleton.bone_name_index_map.emplace(bone_info.name, bone_info.index);
+      }
       
 
       glGenBuffers(1, &new_skeleton.inv_bind_pose_SSBO);

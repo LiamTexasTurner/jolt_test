@@ -15,6 +15,9 @@
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/archives/binary.hpp>
 
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/Ragdoll/Ragdoll.h>
+
 #include <vector>
 #include <span>
 #include <string>
@@ -56,6 +59,7 @@ public:
       packed_freelist<pSkeleton> skeletons;
       packed_freelist<Animation> animations;      
       packed_freelist<AnimationGraph> animation_graphs;
+      packed_freelist<JPH::Ragdoll*> ragdolls;
 
       packed_freelist<Camera> cameras;
       packed_freelist<Skybox> skyboxes;

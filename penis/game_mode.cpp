@@ -8,6 +8,7 @@
 #include "job_system.h"
 #include <cereal/cereal.hpp>
 #include <fstream>
+#include <Jolt/Physics/Ragdoll/Ragdoll.h>
 
 #include <iostream>
 
@@ -80,7 +81,7 @@ public:
                   
                   
                   //Instances
-                  for(int i = 0; i < 10; i++)
+                  for(int i = 0; i < 1; i++)
                   {
                         uint32_t new_instance_ID = 0;
 
@@ -94,8 +95,8 @@ public:
                         }
                               
                         uint32_t new_transform_ID = scene->instances[new_instance_ID].transform_ID;
-                        scene->transforms[new_instance_ID].translation = glm::vec3(i + 1,0,0);
-                        scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
+                        scene->transforms[new_instance_ID].translation = glm::vec3(i + 0,0,0);
+                        // scene->transforms[new_instance_ID].rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0,1,0));
                         entities.emplace_back(Entity(new_instance_ID));
                   }
             };
@@ -190,6 +191,52 @@ public:
       
 
             
+      }
+
+      void PrePhysicsUpdate(float dt) override
+      {
+            pSkeleton& skeleton = m_scene->skeletons[0];
+            AnimationGraph& graph = m_scene->animation_graphs[0];
+            vector<TRS>& pose = graph.out_pose;
+            Ragdoll* ragdoll = m_scene->ragdolls[0];
+
+            int pelvis = skeleton.bone_name_index_map.find("pelvis")->second;
+            int spine_03 = skeleton.bone_name_index_map.find("spine_03")->second;
+            int spine_05 = skeleton.bone_name_index_map.find("spine_05")->second;
+            int head = skeleton.bone_name_index_map.find("head")->second;
+            
+            int upperarm_l = skeleton.bone_name_index_map.find("upperarm_l")->second;
+            int lowerarm_l = skeleton.bone_name_index_map.find("lowerarm_l")->second;
+
+            int upperarm_r = skeleton.bone_name_index_map.find("upperarm_r")->second;
+            int lowerarm_r = skeleton.bone_name_index_map.find("lowerarm_r")->second;
+
+            int thigh_l = skeleton.bone_name_index_map.find("thigh_l")->second;
+            int calf_l = skeleton.bone_name_index_map.find("calf_l")->second;
+
+            int thigh_r = skeleton.bone_name_index_map.find("thigh_r")->second;
+            int calf_r = skeleton.bone_name_index_map.find("calf_r")->second;
+            
+            m_jolt->mPhysicsSystem->GetBodyInterface().SetPositionAndRotation(ragdoll->GetBodyIDs()[0],
+                                                                              glm_to_j_vec(pose[pelvis].translation),
+                                                                              glm_to_j_quat(pose[pelvis].rotation),
+                                                                              EActivation::DontActivate);
+
+            m_jolt->mPhysicsSystem->GetBodyInterface().SetPositionAndRotation(ragdoll->GetBodyIDs()[1],
+                                                                              glm_to_j_vec(pose[spine_03].translation),
+                                                                              glm_to_j_quat(pose[spine_03].rotation),
+                                                                              EActivation::DontActivate);
+
+            m_jolt->mPhysicsSystem->GetBodyInterface().SetPositionAndRotation(ragdoll->GetBodyIDs()[2],
+                                                                              glm_to_j_vec(pose[spine_05].translation),
+                                                                              glm_to_j_quat(pose[spine_05].rotation),
+                                                                              EActivation::DontActivate);
+
+            m_jolt->mPhysicsSystem->GetBodyInterface().SetPositionAndRotation(ragdoll->GetBodyIDs()[3],
+                                                                              glm_to_j_vec(pose[head].translation),
+                                                                              glm_to_j_quat(pose[head].rotation),
+                                                                              EActivation::DontActivate);
+
       }
 
       void PhysicsUpdate(float dt) override

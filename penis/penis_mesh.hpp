@@ -198,7 +198,8 @@ struct pSkeleton
       std::vector<BoneInfo> bone_info;
       std::vector<TRS> bind_pose;
       std::vector<glm::mat4> inv_bind_mats;
-      std::string name;      
+      std::string name;
+      std::unordered_map<std::string, int> bone_name_index_map;
       unsigned int inv_bind_pose_SSBO;
       int bone_count;      
 };
