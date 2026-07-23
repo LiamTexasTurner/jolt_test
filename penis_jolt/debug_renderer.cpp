@@ -6,6 +6,26 @@
 
 
 
+inline glm::mat4 j_mat4_to_glm(const JPH::RMat44& m)
+{
+      JPH::Vec4 column_0 = m.GetColumn4(0);
+      JPH::Vec4 column_1 = m.GetColumn4(1);
+      JPH::Vec4 column_2 = m.GetColumn4(2);
+      JPH::RVec3 translation = m.GetTranslation();
+
+      return glm::mat4(
+            glm::vec4(column_0.GetX(), column_0.GetY(), column_0.GetZ(), column_0.GetW()),
+            glm::vec4(column_1.GetX(), column_1.GetY(), column_1.GetZ(), column_1.GetW()),
+            glm::vec4(column_2.GetX(), column_2.GetY(), column_2.GetZ(), column_2.GetW()),
+            glm::vec4(static_cast<float>(translation.GetX()),
+                      static_cast<float>(translation.GetY()),
+                      static_cast<float>(translation.GetZ()),
+                      1.0f)
+      );
+}
+
+
+
 pDebugRenderer::pDebugRenderer()
 {
       DebugRenderer::Initialize();
@@ -34,7 +54,8 @@ DebugRenderer::Batch pDebugRenderer::CreateTriangleBatch(const Vertex *inVertice
 {
       pRenderPrimitive* prim = new pRenderPrimitive{};
 
-      prim->vertex_count = inIndexCount;
+      prim->vertex_count = inVertexCount;
+      prim->indices_count = inIndexCount;
 
       glGenVertexArrays(1, &prim->VAO);
       glGenBuffers(1, &prim->VBO);
@@ -43,10 +64,10 @@ DebugRenderer::Batch pDebugRenderer::CreateTriangleBatch(const Vertex *inVertice
       glBindVertexArray(prim->VAO);
       
       glBindBuffer(GL_ARRAY_BUFFER, prim->VBO);
-      glBufferData(GL_ARRAY_BUFFER, inVertexCount, inVertices, GL_STATIC_DRAW);
+      glBufferData(GL_ARRAY_BUFFER, inVertexCount * sizeof(Vertex), inVertices, GL_STATIC_DRAW);
 
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prim->EBO);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, inIndexCount, inIndices, GL_STATIC_DRAW);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, inIndexCount * sizeof(uint32_t), inIndices, GL_STATIC_DRAW);
 
       glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
       glEnableVertexAttribArray(0);
@@ -63,30 +84,29 @@ void pDebugRenderer::DrawGeometry(RMat44Arg inModelMatrix,
                                   ECullMode inCullMode, ECastShadow inCastShadow, EDrawMode inDrawMode) 
 {
       
-      pRenderPrimitive* prim = dynamic_cast<pRenderPrimitive*>(inGeometry.GetPtr()->mLODs[0].mTriangleBatch.GetPtr());{}
+      pRenderPrimitive* prim = dynamic_cast<pRenderPrimitive*>(inGeometry.GetPtr()->mLODs[(inGeometry.GetPtr()->mLODs.size() - 1)].mTriangleBatch.GetPtr());
+      // pRenderPrimitive* prim = dynamic_cast<pRenderPrimitive*>(inGeometry.GetPtr()->mLODs[0].mTriangleBatch.GetPtr());
+      
       GLuint VAO = prim->VAO;
       GLuint VBO = prim->VBO;
 
       
-      debug_line_SP.use();
+      debug_line_SP.use();      
       
+      glBindVertexArray(VAO);      
       
-      glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      glDisable(GL_DEPTH_TEST);
-      
-      
-      glBindVertexArray(VAO);
-      glBindBuffer(GL_ARRAY_BUFFER, VBO);
-      
-      debug_line_SP.setMat4("model", glm::mat4(1.0f));
+      glm::mat4 model = j_mat4_to_glm(inModelMatrix);
+            
+      debug_line_SP.setMat4("model", model);
       debug_line_SP.setMat4("view", view);
-      debug_line_SP.setMat4("projection", projection);    
+      debug_line_SP.setMat4("projection", projection);
 
-      glDrawArrays(GL_LINES, 0, (GLsizei)prim->vertex_count);
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-      
-      
+      glDrawElements(GL_TRIANGLES, (GLsizei)prim->indices_count, GL_UNSIGNED_INT, nullptr);
+
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 }
 
 

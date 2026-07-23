@@ -52,6 +52,7 @@ public:
       GLuint EBO;
 
       int vertex_count;
+      int indices_count;
 
       virtual void AddRef() override { RefTarget<pRenderPrimitive>::AddRef(); }
 	virtual void Release() override{ RefTarget<pRenderPrimitive>::Release(); }

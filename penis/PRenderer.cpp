@@ -20,10 +20,10 @@
 
 using namespace std;
 
-void PRenderer::Init(Scene* scene) 
+void PRenderer::Init(Scene* scene, pJolt* p_jolt) 
 {
       m_scene = scene;
-      
+      m_p_jolt = p_jolt;
       
 
       m_shaders.SetVersion("440");
@@ -39,7 +39,6 @@ void PRenderer::Init(Scene* scene)
       m_PP_clear = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_clear.frag"});
       m_skinning = m_shaders.AddProgramFromExts({"../shaders/skinning.vert","../shaders/skinning.frag"});
       m_skin_compute = m_shaders.AddProgramFromExts({"../shaders/skin.comp"});
-      
 
       glGenVertexArrays(1, &m_null_vao);
       glBindVertexArray(m_null_vao);
@@ -294,7 +293,14 @@ unsigned int PRenderer::Paint()
 
       BlitFrameBuffer(back_buffer_multi_samp_FBO, back_buffer_single_samp_FBO, SCR_WIDTH, SCR_HEIGHT);
 
-      DrawDebugLines(glm::mat4(1.0f), view, projection);
+      // DrawDebugLines(glm::mat4(1.0f), view, projection);
+      glBindFramebuffer(GL_FRAMEBUFFER, back_buffer_single_samp_FBO);
+      glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+      glEnable(GL_DEPTH_TEST);
+      m_p_jolt->mDebugRenderer->view = view;
+      m_p_jolt->mDebugRenderer->projection = projection;
+      m_p_jolt->mPhysicsSystem->DrawBodies(m_p_jolt->mBodyDrawSettings, m_p_jolt->mDebugRenderer);
+      ResetRenderState();
       
       PostProcess(back_buffer_single_samp_CT, m_PP_clear, 0, 0, SCR_WIDTH, SCR_HEIGHT);
 

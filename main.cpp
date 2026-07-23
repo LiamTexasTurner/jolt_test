@@ -152,16 +152,16 @@ int main()
       // Setup Platform/Renderer backends
       ImGui_ImplGlfw_InitForOpenGL(window, true);
       ImGui_ImplOpenGL3_Init();
+
+      pJolt p_jolt;
       
       Scene scene;
       scene.Init();
 
       IRenderer* renderer = NewRenderer();
-      renderer->Init(&scene);
+      renderer->Init(&scene, &p_jolt);
 
       renderer->Resize(SCR_WIDTH, SCR_HEIGHT);
-
-      pJolt p_jolt;
 
       IGameMode* game_mode = NewGameMode();
       game_mode->Init(&scene, &p_jolt, window, renderer);
@@ -192,13 +192,6 @@ int main()
             {
                   accumulator -= fixed_dt;
                   game_mode->PhysicsUpdate(fixed_dt);
-
-                  Camera* cam = &scene.cameras[scene.main_camera_ID];
-                  glm::mat4 view = cam->GetViewMatrix();
-                  glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 3000.0f);
-                  p_jolt.mDebugRenderer->view = view;
-                  p_jolt.mDebugRenderer->projection = projection;
-                  p_jolt.mPhysicsSystem->DrawBodies(p_jolt.mBodyDrawSettings, p_jolt.mDebugRenderer);                  
             }
       
             game_mode->Update(delta_time);

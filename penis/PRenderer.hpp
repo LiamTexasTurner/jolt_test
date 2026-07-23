@@ -7,6 +7,7 @@
 #include "glm/glm.hpp"
 #include <unordered_map>
 #include <span>
+#include <penis_jolt.hpp>
 
 
 class PRenderer : public IRenderer
@@ -16,6 +17,7 @@ public:
       PRenderer() = default;
 
       Scene* m_scene;
+      pJolt* m_p_jolt;
 
       ShaderSet m_shaders;
       GLuint* m_scene_SP;
@@ -69,7 +71,7 @@ public:
       bool draw_skinned = false;
       void toggle_skinned(){draw_skinned = ! draw_skinned;}
       
-      void Init(Scene* scene) override;
+      void Init(Scene* scene, pJolt* p_jolt) override;
       void UpdateBuffers(Scene* scene) override;
       void Resize(int width, int height) override;
       unsigned int Paint() override;
