@@ -255,8 +255,8 @@ public:
                   int lowerarm_r = skeleton.bone_name_index_map.find("lowerarm_r")->second;
 
                   glm::vec3 upperarm_r_pos = pose[upperarm_r].translation + ((pose[lowerarm_r].translation - pose[upperarm_r].translation) * 0.5f);
-                  // glm::quat upperarm_r_rot = pose[upperarm_r].rotation * glm::angleAxis(glm::radians(90.0f), glm::vec3(0,0,-1));
-                  glm::quat upperarm_r_rot = pose[upperarm_r].rotation;
+                  glm::quat upperarm_r_rot = pose[upperarm_r].rotation * glm::angleAxis(glm::radians(90.0f), glm::vec3(0,0,1));
+                  // glm::quat upperarm_r_rot = pose[upperarm_r].rotation;
 
 
                   m_jolt->mPhysicsSystem->GetBodyInterface().SetPositionAndRotation(ragdoll->GetBodyIDs()[4],
@@ -282,8 +282,8 @@ public:
                   int hand_r = skeleton.bone_name_index_map.find("hand_r")->second;
 
                   glm::vec3 lowerarm_r_pos = pose[lowerarm_r].translation + ((pose[hand_r].translation - pose[lowerarm_r].translation) * 0.5f);
-                  // glm::quat lowerarm_r_rot = pose[lowerarm_r].rotation * glm::angleAxis(glm::radians(90.0f), glm::vec3(0,0,-1));
-                  glm::quat lowerarm_r_rot = pose[lowerarm_r].rotation;
+                  glm::quat lowerarm_r_rot = pose[lowerarm_r].rotation * glm::angleAxis(glm::radians(90.0f), glm::vec3(0,0,1));
+                 
 
 
                   m_jolt->mPhysicsSystem->GetBodyInterface().SetPositionAndRotation(ragdoll->GetBodyIDs()[6],
@@ -311,7 +311,7 @@ public:
                   int calf_r = skeleton.bone_name_index_map.find("calf_r")->second;
 
                   glm::vec3 thigh_r_pos = pose[thigh_r].translation + ((pose[calf_r].translation - pose[thigh_r].translation) * 0.5f);
-                  glm::quat thigh_r_rot = pose[thigh_r].rotation * glm::angleAxis(glm::radians(90.0f), glm::vec3(0,0,-1));
+                  glm::quat thigh_r_rot = pose[thigh_r].rotation * glm::angleAxis(glm::radians(90.0f), glm::vec3(0,0,1));
 
                   m_jolt->mPhysicsSystem->GetBodyInterface().SetPositionAndRotation(ragdoll->GetBodyIDs()[8],
                                                                                     glm_to_j_vec(thigh_r_pos),
@@ -332,7 +332,7 @@ public:
                   int foot_r = skeleton.bone_name_index_map.find("foot_r")->second;
 
                   glm::vec3 calf_r_pos = pose[calf_r].translation + ((pose[foot_r].translation - pose[calf_r].translation) * 0.5f);
-                  glm::quat calf_r_rot = pose[calf_r].rotation * glm::angleAxis(glm::radians(90.0f), glm::vec3(0,0,-1));
+                  glm::quat calf_r_rot = pose[calf_r].rotation * glm::angleAxis(glm::radians(90.0f), glm::vec3(0,0,1));
 
                   m_jolt->mPhysicsSystem->GetBodyInterface().SetPositionAndRotation(ragdoll->GetBodyIDs()[10],
                                                                                     glm_to_j_vec(calf_r_pos),
