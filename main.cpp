@@ -152,8 +152,6 @@ int main()
       // Setup Platform/Renderer backends
       ImGui_ImplGlfw_InitForOpenGL(window, true);
       ImGui_ImplOpenGL3_Init();
-
-      pJolt p_jolt;
       
       Scene scene;
       scene.Init();
@@ -163,13 +161,15 @@ int main()
 
       renderer->Resize(SCR_WIDTH, SCR_HEIGHT);
 
+      pJolt p_jolt;
+
       IGameMode* game_mode = NewGameMode();
       game_mode->Init(&scene, &p_jolt, window, renderer);
 
       p_jolt.CreateSphere(glm::vec3(1.0f, 5.0f, 0.0f), 20.0f);
-      // p_jolt.CreateSphere(glm::vec3(-1.0f, 5.0f, 0.0f), 20.0f);
-      // p_jolt.CreateBox(glm::vec3(0.0f), glm::vec3(10.0f, 1.0f, 10.0f));
-      // p_jolt.AddRagdoll();
+      p_jolt.CreateSphere(glm::vec3(-1.0f, 5.0f, 0.0f), 20.0f);
+      p_jolt.CreateBox(glm::vec3(0.0f), glm::vec3(10.0f, 1.0f, 10.0f));
+      p_jolt.AddRagdoll();
 
       last_time = glfwGetTime();
       accumulator = 0.0;
@@ -192,12 +192,15 @@ int main()
             {
                   accumulator -= fixed_dt;
                   game_mode->PhysicsUpdate(fixed_dt);
-                  
-                        
+
+                  Camera* cam = &scene.cameras[scene.main_camera_ID];
+                  glm::mat4 view = cam->GetViewMatrix();
+                  glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 3000.0f);
+                  p_jolt.mDebugRenderer->view = view;
+                  p_jolt.mDebugRenderer->projection = projection;
+                  p_jolt.mPhysicsSystem->DrawBodies(p_jolt.mBodyDrawSettings, p_jolt.mDebugRenderer);                  
             }
-
-            p_jolt.mPhysicsSystem->DrawBodies(p_jolt.mBodyDrawSettings, p_jolt.mDebugRenderer);
-
+      
             game_mode->Update(delta_time);
 
             ImGui_ImplOpenGL3_NewFrame();
@@ -232,11 +235,13 @@ int main()
                   PREV_SCR_WIDTH = SCR_WIDTH;
                   PREV_SCR_HEIGHT = SCR_HEIGHT;
             }
+
+            
       
 
-
+      
             unsigned int render_texture = renderer->Paint();
-            
+                  
 
             ImGui::Image((ImTextureID)(intptr_t)render_texture,
                          ImVec2((float)SCR_WIDTH, (float)SCR_HEIGHT),

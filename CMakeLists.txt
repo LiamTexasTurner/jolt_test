@@ -45,6 +45,9 @@ add_executable(SceneRenderer
 )
 
 target_include_directories(SceneRenderer PRIVATE
+  penis
+  penis_common
+  penis_jolt
   include  
   penis_common
   c:/gli  

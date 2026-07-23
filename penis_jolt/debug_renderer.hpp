@@ -3,6 +3,9 @@
 #include <Jolt/Renderer/DebugRenderer.h>
 #include <Jolt/Core/Reference.h>
 #include <glad/glad.h>
+#include <shaderset.h>
+#include <glm/glm.hpp>
+#include <shader.h>
 
 using namespace JPH;
 
@@ -32,6 +35,11 @@ public:
                               const string_view &inString,
                               ColorArg inColor,
                               float inHeight) override;
+      
+      Shader debug_line_SP;
+
+      glm::mat4 view;
+      glm::mat4 projection;
 };
 
 class pRenderPrimitive : public RefTarget<pRenderPrimitive>, public RefTargetVirtual
@@ -41,6 +49,9 @@ public:
 
       GLuint VAO;
       GLuint VBO;
+      GLuint EBO;
+
+      int vertex_count;
 
       virtual void AddRef() override { RefTarget<pRenderPrimitive>::AddRef(); }
 	virtual void Release() override{ RefTarget<pRenderPrimitive>::Release(); }

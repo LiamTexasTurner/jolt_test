@@ -39,7 +39,7 @@ void PRenderer::Init(Scene* scene)
       m_PP_clear = m_shaders.AddProgramFromExts({"../shaders/blit.vert", "../shaders/post_process_clear.frag"});
       m_skinning = m_shaders.AddProgramFromExts({"../shaders/skinning.vert","../shaders/skinning.frag"});
       m_skin_compute = m_shaders.AddProgramFromExts({"../shaders/skin.comp"});
-      m_debug_line_SP = m_shaders.AddProgramFromExts({"../shaders/debug_line.vert", "../shaders/debug_line.frag"});
+      
 
       glGenVertexArrays(1, &m_null_vao);
       glBindVertexArray(m_null_vao);

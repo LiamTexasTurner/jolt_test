@@ -29,7 +29,6 @@ public:
       GLuint* m_PP_clear;
       GLuint* m_skinning;
       GLuint* m_skin_compute;
-      GLuint* m_debug_line_SP;
       
       unsigned int SCR_WIDTH;
       unsigned int SCR_HEIGHT;
