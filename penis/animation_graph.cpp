@@ -57,7 +57,7 @@ void TickPose(const Animation& in_animation, span<TRS> out_pose, float frame)
 void TickAnimGraph(Arena& arena, AnimationGraph& graph, float dt, int anim_index)
 {
 
-      AnimationClip& clip = graph.clips[10];
+      AnimationClip& clip = graph.clips[8];
       TickClipTime(clip, dt, true);
 
       TickPose((*graph.animations)[clip.ID], graph.out_pose, clip.current_time);
@@ -66,7 +66,7 @@ void TickAnimGraph(Arena& arena, AnimationGraph& graph, float dt, int anim_index
 }
 void TickAnimGraphSerial( AnimationGraph& graph, float dt)
 {
-      AnimationClip& clip = graph.clips[16];
+      AnimationClip& clip = graph.clips[8];
       TickClipTime(clip, dt, true);
 
       TickPose((*graph.animations)[clip.ID], graph.out_pose, clip.current_time);
