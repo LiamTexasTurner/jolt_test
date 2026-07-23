@@ -188,8 +188,8 @@ int main()
             while (accumulator >= fixed_dt)
             {
                   accumulator -= fixed_dt;
-                  game_mode->PrePhysicsUpdate(fixed_dt);
-                  game_mode->PhysicsUpdate(fixed_dt);
+                  game_mode->PrePhysicsUpdate(fixed_dt * 0.05f);
+                  game_mode->PhysicsUpdate(fixed_dt * 0.05f);
             }
       
             game_mode->Update(delta_time);
