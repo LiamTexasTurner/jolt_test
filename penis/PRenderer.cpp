@@ -567,6 +567,10 @@ void PRenderer::DrawOpaque(const glm::mat4& projection,
                   MW = scale(transform->scale) * MW;
                   MW = translate(transform->translation) * MW;
 
+                  
+                  // MW = glm::translate(glm::mat4(1.0f), transform->translation) *
+                  //      glm::mat4_cast(transform->rotation);
+
                   glUniformMatrix4fv(SCENE_MW_UNIFORM_LOCATION, 1, GL_FALSE, value_ptr(MW));
                   glUniform1i(SCENE_BONE_OFFSET_UNIFORM_LOCATION, skeleton->bone_count * i);
 

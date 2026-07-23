@@ -198,6 +198,7 @@ public:
 
       void PrePhysicsUpdate(float dt) override
       {
+            Transform& transform = m_scene->transforms[0];
             pSkeleton& skeleton = m_scene->skeletons[0];
             AnimationGraph& graph = m_scene->animation_graphs[0];
             vector<TRS>& pose = graph.out_pose;
@@ -206,11 +207,60 @@ public:
             if(activate_ragdoll)
             {
                   ragdoll->Activate();
+                  graph.ragdoll = true;
+
+                  int pelvis = skeleton.bone_name_index_map.find("pelvis")->second;
+                  int spine_03 = skeleton.bone_name_index_map.find("spine_03")->second;
+                  int spine_05 = skeleton.bone_name_index_map.find("spine_05")->second;
+                  int head = skeleton.bone_name_index_map.find("head")->second;
+
                   
 
+                  RVec3 root_pos;
+                  Quat root_rot;
+                  
+                  ragdoll->GetRootTransform(root_pos, root_rot);
+
+                  glm::vec3 root_pos_glm = j_to_glm_vec3(root_pos);
+                  glm::quat root_rot_glm = j_to_glm_quat(root_rot);
+
+                  // transform.translation = root_pos_glm - root_rot_glm * glm::vec3(0,-1,0);
+                  transform.translation = root_pos_glm - glm::vec3(pose[pelvis].translation);
+                  // transform.rotation_origin = root_pos_glm;
+                  
+                  // transform.rotation = root_rot_glm;
+
+                  // transform.translation -= root_rot_glm * glm::vec3(0,1,0);
+
+                  
+                  glm::vec3 pelvis_pos =  j_to_glm_vec3(m_jolt->mPhysicsSystem->GetBodyInterface().GetPosition(ragdoll->GetBodyIDs()[0]));
+                  glm::quat pelvis_rot =  j_to_glm_quat(m_jolt->mPhysicsSystem->GetBodyInterface().GetRotation(ragdoll->GetBodyIDs()[0]));                        
+                  pose[pelvis].translation = glm::vec4(pelvis_pos - transform.translation, 1.0f);
+                  pose[pelvis].rotation = root_rot_glm * pelvis_rot;
+      
+                  glm::vec3 spine_03_pos =  j_to_glm_vec3(m_jolt->mPhysicsSystem->GetBodyInterface().GetPosition(ragdoll->GetBodyIDs()[1]));
+                  glm::quat spine_03_rot =  j_to_glm_quat(m_jolt->mPhysicsSystem->GetBodyInterface().GetRotation(ragdoll->GetBodyIDs()[1]));
+                  pose[spine_03].translation = glm::vec4(spine_03_pos - transform.translation, 1.0f);
+                  pose[spine_03].rotation = root_rot_glm * spine_03_rot;
+
+
+                  glm::vec3 spine_05_pos =  j_to_glm_vec3(m_jolt->mPhysicsSystem->GetBodyInterface().GetPosition(ragdoll->GetBodyIDs()[2]));
+                  glm::quat spine_05_rot =  j_to_glm_quat(m_jolt->mPhysicsSystem->GetBodyInterface().GetRotation(ragdoll->GetBodyIDs()[2]));
+                  pose[spine_05].translation = glm::vec4(spine_05_pos - transform.translation, 1.0f);
+                  pose[spine_05].rotation = root_rot_glm * spine_05_rot;
+
+                  glm::vec3 head_pos =  j_to_glm_vec3(m_jolt->mPhysicsSystem->GetBodyInterface().GetPosition(ragdoll->GetBodyIDs()[3]));
+                  glm::quat head_rot =  j_to_glm_quat(m_jolt->mPhysicsSystem->GetBodyInterface().GetRotation(ragdoll->GetBodyIDs()[3]));
+                  pose[head].translation = glm::vec4(head_pos - transform.translation, 1.0f);
+                  pose[head].rotation = head_rot;
+            
             }
             else
             {
+                  graph.ragdoll = false;
+
+                  transform.translation = glm::vec3(0.0f);
+                  transform.rotation = glm::identity<glm::quat>();
                   
                   int pelvis = skeleton.bone_name_index_map.find("pelvis")->second;
                   int spine_03 = skeleton.bone_name_index_map.find("spine_03")->second;

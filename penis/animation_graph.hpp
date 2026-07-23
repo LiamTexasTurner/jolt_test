@@ -61,6 +61,8 @@ struct AnimationGraph
       
       int bone_count;
       int anim_index = 0;
+
+      bool ragdoll = false;
 };
 void TickAnimGraph(Arena& arena, AnimationGraph& graph, float dt, int anim_index);
 void TickAnimGraphSerial( AnimationGraph& graph, float dt);
