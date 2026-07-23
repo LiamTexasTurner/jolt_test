@@ -25,6 +25,8 @@ set(ENABLE_OBJECT_STREAM ON CACHE BOOL "" FORCE)
 # Do not treat warnings in third-party Jolt code as errors.
 set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "" FORCE)
 
+set(CPP_RTTI_ENABLED ON CACHE BOOL "" FORCE)
+
 add_subdirectory(
   "${THIRD_PARTY_DIR}/JoltPhysics/Build"
   "${CMAKE_CURRENT_BINARY_DIR}/JoltPhysics"
@@ -141,6 +143,7 @@ target_link_libraries(SceneRenderer PRIVATE
 
 target_compile_definitions(SceneRenderer PRIVATE
   GLM_FORCE_CTOR_INIT
+  
 )
 
 # Windows-only libraries used directly by your application.

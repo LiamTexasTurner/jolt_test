@@ -1,4 +1,4 @@
-#include "Skybox.hpp"
+#include "skybox.hpp"
 
 #include <glad/glad.h>
 #include <stb_image.h>

@@ -71,19 +71,6 @@ struct ArenaArray
 };
 
 
-template<class T>
-ArenaArray<T> CreateArenaArray(Arena& arena, size_t count)
-{
-      ArenaArray<T> result{};
-
-      result.items = static_cast<T*>(arena_alloc(&arena, sizeof(T) * count));
-
-      result.count = count;
-      result.capacity = count;
-
-      return result;
-};
-
 #ifndef ARENA_REGION_DEFAULT_CAPACITY
 #define ARENA_REGION_DEFAULT_CAPACITY (8*1024)
 #endif // ARENA_REGION_DEFAULT_CAPACITY
@@ -106,6 +93,19 @@ void arena_reset(Arena *a);
 void arena_rewind(Arena *a, Arena_Mark m);
 void arena_free(Arena *a);
 void arena_trim(Arena *a);
+
+template<class T>
+ArenaArray<T> CreateArenaArray(Arena& arena, size_t count)
+{
+      ArenaArray<T> result{};
+
+      result.items = static_cast<T*>(arena_alloc(&arena, sizeof(T) * count));
+
+      result.count = count;
+      result.capacity = count;
+
+      return result;
+};
 
 #ifndef ARENA_DA_INIT_CAP
 #define ARENA_DA_INIT_CAP 256

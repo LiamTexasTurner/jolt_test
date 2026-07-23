@@ -1,4 +1,4 @@
-in vec2 oTexCoord;
+layout(location = BLIT_TEXCOORD_VARYING_LOCATION) in vec2 oTexCoord;
 
 out vec4 FragCol;
 

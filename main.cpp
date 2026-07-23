@@ -1,10 +1,9 @@
-﻿#include <Windows.h>
-#include <dwmapi.h>
+﻿
 
 #include <glad/glad.h>
-#define GLFW_EXPOSE_NATIVE_WIN32
+
 #include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
+
 
 #include <stb_image.h>
 
@@ -83,38 +82,7 @@ int main()
             window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Penis", monitor, NULL);
       }
 
-      HWND hwnd = glfwGetWin32Window(window);
-
-      // COLORREF is 0x00BBGGRR, not RGB order.
-      COLORREF titleBarColor = RGB(25, 25, 25);
       
-      DwmSetWindowAttribute(hwnd,
-                            DWMWA_CAPTION_COLOR,
-                            &titleBarColor,
-                            sizeof(titleBarColor)
-                            );
-      int width = 0;
-      int height = 0;
-      int channels = 0;
-
-      unsigned char* pixels = stbi_load("../resources/manray/manray_headset_small.png",
-                                        &width,
-                                        &height,
-                                        &channels,
-                                        4
-                                        );
-
-      if (pixels)
-      {
-            GLFWimage icon;
-            icon.width  = width;
-            icon.height = height;
-            icon.pixels = pixels;
-
-            glfwSetWindowIcon(window, 1, &icon);
-
-            stbi_image_free(pixels);
-      }
             
       
       if (window == NULL)

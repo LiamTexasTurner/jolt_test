@@ -1,6 +1,4 @@
-// This shader renders a fullscreen triangle and outputs texcoords
-// Call it by rendering 1 triangle, hook up your own fragment shader to it.
-// Texcoords follow GL conventions.
+
 
 layout(location = BLIT_TEXCOORD_VARYING_LOCATION) out vec2 oTexCoord;
 
